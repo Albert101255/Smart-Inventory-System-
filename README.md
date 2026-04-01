@@ -61,5 +61,17 @@ python run.py
 - **Manager**: `manager@inventory.com` / `Manager@123`
 - **Staff**: `staff@inventory.com` / `Staff@123`
 
+## 🌐 Deployment: How to Go Live
+To make STOCKR accessible from anywhere, we recommend using **Render**:
+
+1. **Connect GitHub**: Create a [Render](https://render.com) account and connect your GitHub repository.
+2. **New Web Service**: Select "New" > "Web Service".
+3. **Configure**:
+   - **Environment**: `Python`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `gunicorn run:app`
+4. **Environment Variables**: Add `DATABASE_URL` (if using PostgreSQL) or keep current SQLite for simple demos.
+5. **Auto-Deploy**: Every time you push to the `main` branch, Render will automatically rebuild and update your live site.
+
 ---
 © 2026 ANTIGRAVITY LABS. Developed with precision and art.
