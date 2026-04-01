@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h3 class="mb-0">Inventory Reports</h3>
+    </div>
+    <div class="col-md-6 text-end">
+        <a href="{{ url_for('reports.export_csv') }}" class="btn btn-primary"><i class="fas fa-file-export"></i> Export Stock CSV</a>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-xl-6">
+        <div class="card shadow">
+            <div class="card-header border-0">
+                <h3 class="mb-0">Top Consumed Products (Last 30 Days)</h3>
+            </div>
+            <div class="card-body">
+                <div class="chart">
+                    <canvas id="consumptionChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <div class="card shadow">
+            <div class="card-header border-0">
+                <h3 class="mb-0">Stock Levels Summary</h3>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-4">
+                        <div class="h1 mb-0">{{ total_products }}</div>
+                        <div class="text-muted">Total Products</div>
+                    </div>
+                    <div class="col-6 mb-4">
+                        <div class="h1 mb-0 text-warning">{{ low_stock_count }}</div>
+                        <div class="text-muted">Low Stock Items</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="h1 mb-0 text-danger">{{ out_of_stock_count }}</div>
+                        <div class="text-muted">Out of Stock Items</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="h1 mb-0 text-info">---</div>
+                        <div class="text-muted">Active Categories</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header border-0">
+                <h3 class="mb-0">Low Stock Details</h3>
+            </div>
+            <div class="table-responsive">
+                <table class="table align-items-center table-flush">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Product</th>
+                            <th>Quantity</th>
+                            <th>Threshold</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in low_stock_products %}
+                        <tr>
+                            <td>{{ p.name }}</td>
+                            <td>{{ p.quantity }} {{ p.unit }}</td>
+                            <td>{{ p.minimum_threshold }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'danger' if p.quantity == 0 else 'warning' }}">
+                                    {{ 'Out of Stock' if p.quantity == 0 else 'Low Stock' }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('stock.stock_in', product_id=p.id) }}" class="btn btn-sm btn-success">Restock</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row">
+    <div class="col-md-7">
+        <div class="card shadow">
+            <div class="card-header border-0 bg-light text-primary">
+                <h3 class="mb-0">Quick Stock Action</h3>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <label class="form-label">Search/Select Product</label>
+                    <select id="productSelector" class="form-select form-select-lg">
+                        <option value="">-- Select Product --</option>
+                        {% for product in products %}
+                        <option value="{{ product.id }}" data-qty="{{ product.quantity }}" data-unit="{{ product.unit }}">
+                            {{ product.name }} ({{ product.sku }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div id="productInfo" class="alert alert-info d-none">
+                    <strong>Current Quantity:</strong> <span id="currentQty">0</span> <span id="currentUnit"></span>
+                </div>
+
+                <div class="row g-2">
+                    <div class="col-6">
+                        <button id="btnIn" class="btn btn-success btn-lg w-100 py-3 d-none"><i class="fas fa-plus"></i> Stock IN</button>
+                    </div>
+                    <div class="col-6">
+                        <button id="btnOut" class="btn btn-danger btn-lg w-100 py-3 d-none"><i class="fas fa-minus"></i> Stock OUT</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-5">
+        <div class="card shadow">
+            <div class="card-header border-0">
+                <h3 class="mb-0">Your Recent Activity</h3>
+            </div>
+            <div class="card-body">
+                {% if my_transactions %}
+                <ul class="list-group list-group-flush">
+                    {% for t in my_transactions %}
+                    <li class="list-group-item px-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0">{{ t.product.name }}</h6>
+                                <small class="text-muted">{{ t.created_at.strftime('%H:%M, %d %b') }}</small>
+                            </div>
+                            <span class="badge bg-{{ 'success' if t.transaction_type == 'IN' else 'danger' if t.transaction_type == 'OUT' else 'info' }}">
+                                {{ '+' if t.transaction_type == 'IN' else '-' if t.transaction_type == 'OUT' else '' }}{{ t.quantity }}
+                            </span>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-center text-muted">No recent activity</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('productSelector').addEventListener('change', function() {
+        const selected = this.options[this.selectedIndex];
+        if (this.value) {
+            document.getElementById('productInfo').classList.remove('d-none');
+            document.getElementById('currentQty').innerText = selected.getAttribute('data-qty');
+            document.getElementById('currentUnit').innerText = selected.getAttribute('data-unit');
+            document.getElementById('btnIn').classList.remove('d-none');
+            document.getElementById('btnOut').classList.remove('d-none');
+        } else {
+            document.getElementById('productInfo').classList.add('d-none');
+            document.getElementById('btnIn').classList.add('d-none');
+            document.getElementById('btnOut').classList.add('d-none');
+        }
+    });
+
+    document.getElementById('btnIn').addEventListener('click', function() {
+        const id = document.getElementById('productSelector').value;
+        window.location.href = `{{ url_for('stock.stock_in') }}?product_id=${id}`;
+    });
+
+    document.getElementById('btnOut').addEventListener('click', function() {
+        const id = document.getElementById('productSelector').value;
+        window.location.href = `{{ url_for('stock.stock_out') }}?product_id=${id}`;
+    });
+</script>
+{% endblock %}

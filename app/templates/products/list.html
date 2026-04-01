@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Products Catalog{% endblock %}
+{% block header %}Inventory Catalog{% endblock %}
+
+{% block content %}
+<div class="riso-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <div style="display: flex; gap: 15px; align-items: center;">
+            <form action="{{ url_for('products.list_products') }}" method="GET" style="display: flex; gap: 8px;">
+                <select name="category" class="riso-input" style="width: 180px;" onchange="this.form.submit()">
+                    <option value="0">All Categories</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}" {{ 'selected' if category_filter == cat.id }}>{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+                {% if search %}
+                <input type="hidden" name="search" value="{{ search }}">
+                {% endif %}
+            </form>
+            
+            {% if search or category_filter %}
+            <a href="{{ url_for('products.list_products') }}" class="riso-btn btn-ghost" style="font-size: 9px; padding: 4px 8px;">CLEAR FILTERS</a>
+            {% endif %}
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <a href="{{ url_for('products.export_products') }}" class="riso-btn btn-yellow">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                EXPORT CSV
+            </a>
+            {% if current_user.role == 'admin' %}
+            <a href="{{ url_for('products.add_product') }}" class="riso-btn btn-primary">+ ADD NEW PRODUCT</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <table class="riso-table">
+        <thead>
+            <tr>
+                <th>SKU</th>
+                <th>Product Name</th>
+                <th>Category</th>
+                <th style="width: 200px;">Current Stock</th>
+                <th>Unit</th>
+                <th>Status</th>
+                <th class="text-right">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in products %}
+            <tr>
+                <td style="font-family: monospace; font-size: 10px; color: rgba(26,35,126,0.6);">{{ p.sku }}</td>
+                <td>
+                    <a href="{{ url_for('products.product_detail', product_id=p.id) }}" style="text-decoration: none; color: var(--riso-navy); font-weight: bold;">
+                        {{ p.name }}
+                    </a>
+                </td>
+                <td><span style="font-size: 10px; text-transform: uppercase;">{{ p.category.name if p.category else 'N/A' }}</span></td>
+                <td>
+                    <div class="stock-bar-wrap">
+                        <div class="stock-bar">
+                            {% set pct = (p.quantity / p.maximum_capacity * 100)|int if p.maximum_capacity > 0 else 0 %}
+                            {% set bar_class = 'stock-fill-ok' %}
+                            {% if p.quantity == 0 %}
+                                {% set bar_class = 'stock-fill-low' %}
+                            {% elif p.quantity <= p.minimum_threshold %}
+                                {% set bar_class = 'stock-fill-warn' %}
+                            {% endif %}
+                            <div class="{{ bar_class }}" style="width: {{ pct if pct <= 100 else 100 }}%;"></div>
+                        </div>
+                        <span style="font-size: 11px; font-weight: bold; min-width: 45px;">{{ p.quantity }}</span>
+                    </div>
+                </td>
+                <td style="font-size: 10px; opacity: 0.6;">{{ p.unit }}</td>
+                <td>
+                    {% if p.quantity == 0 %}
+                    <span class="badge badge-danger">OUT OF STOCK</span>
+                    {% elif p.quantity <= p.minimum_threshold %}
+                    <span class="badge badge-warn">LOW STOCK</span>
+                    {% else %}
+                    <span class="badge badge-ok">IN STOCK</span>
+                    {% endif %}
+                </td>
+                <td class="text-right">
+                    <div style="display: flex; gap: 5px; justify-content: flex-end;">
+                        <a href="{{ url_for('products.product_detail', product_id=p.id) }}" class="riso-btn btn-teal" style="padding: 4px 8px; font-size: 9px;">VIEW</a>
+                        {% if current_user.role == 'admin' %}
+                        <a href="{{ url_for('products.edit_product', product_id=p.id) }}" class="riso-btn btn-yellow" style="padding: 4px 8px; font-size: 9px;">EDIT</a>
+                        <button onclick="confirmDelete('Remove {{ p.name }} from catalog? This will delete all transaction history.', '{{ url_for('products.delete_product', product_id=p.id) }}')" class="riso-btn btn-danger" style="padding: 4px 8px; font-size: 9px;">DEL</button>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+            {% if not products %}
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 60px; opacity: 0.5;">
+                    No products found matching your search.
+                </td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+
+    {% if pagination.pages > 1 %}
+    <div class="pagination">
+        {% if pagination.has_prev %}
+        <a href="{{ url_for('products.list_products', page=pagination.prev_num, search=search, category=category_filter) }}" class="page-link">← PREV</a>
+        {% endif %}
+        
+        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if page_num %}
+                <a href="{{ url_for('products.list_products', page=page_num, search=search, category=category_filter) }}" 
+                   class="page-link {{ 'active' if page_num == pagination.page }}">
+                    {{ page_num }}
+                </a>
+            {% else %}
+                <span style="padding: 8px;">...</span>
+            {% endif %}
+        {% endfor %}
+        
+        {% if pagination.has_next %}
+        <a href="{{ url_for('products.list_products', page=pagination.next_num, search=search, category=category_filter) }}" class="page-link">NEXT →</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

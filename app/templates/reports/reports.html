@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Visual Reports{% endblock %}
+{% block header %}Stock Intelligence Reports{% endblock %}
+
+{% block content %}
+<div class="grid-2 mb-20">
+    <div class="riso-card" style="height: 400px; display: flex; flex-direction: column;">
+        <h3 class="riso-label" style="font-size: 11px; margin-bottom: 20px;">Category Composition (Physical Units)</h3>
+        <div style="flex: 1; min-height: 0;">
+            <canvas id="categoryBreakdownChart"></canvas>
+        </div>
+    </div>
+    <div class="riso-card" style="height: 400px; display: flex; flex-direction: column;">
+        <h3 class="riso-label" style="font-size: 11px; margin-bottom: 20px;">Top 8 Consumption Leaders (Last 30 Days)</h3>
+        <div style="flex: 1; min-height: 0;">
+            <canvas id="consumptionLeaderChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="grid-2">
+    <!-- Low Stock Table -->
+    <div class="riso-card" style="border-color: var(--riso-yellow);">
+        <h3 class="riso-label" style="font-size: 11px; margin-bottom: 20px; color: #8B6914;">Low Stock Warning List</h3>
+        <table class="riso-table">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Current</th>
+                    <th>Threshold</th>
+                    <th>Gap</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in low_stock_products %}
+                <tr>
+                    <td style="font-weight: bold;">{{ p.name }}</td>
+                    <td>{{ p.quantity }}</td>
+                    <td style="color: var(--riso-coral);">{{ p.minimum_threshold }}</td>
+                    <td><span class="badge badge-warn">-{{ p.minimum_threshold - p.quantity }} {{ p.unit }}</span></td>
+                </tr>
+                {% endfor %}
+                {% if not low_stock_products %}
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 40px; opacity: 0.5;">No products currently below threshold.</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Out of Stock Table -->
+    <div class="riso-card" style="border-color: var(--riso-coral);">
+        <h3 class="riso-label" style="font-size: 11px; margin-bottom: 20px; color: var(--riso-coral);">Critical: Out of Stock</h3>
+        <table class="riso-table">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>SKU</th>
+                    <th>Last Seen</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in out_of_stock %}
+                <tr>
+                    <td style="font-weight: bold; color: var(--riso-coral);">{{ p.name }}</td>
+                    <td style="font-family: monospace; font-size: 9px;">{{ p.sku }}</td>
+                    <td style="font-size: 10px;">{{ p.transactions[-1].created_at.strftime('%Y-%m-%d') if p.transactions else 'N/A' }}</td>
+                </tr>
+                {% endfor %}
+                {% if not out_of_stock %}
+                <tr>
+                    <td colspan="3" style="text-align: center; padding: 40px; opacity: 0.5;">All products are currently in stock.</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        initDoughnutChart('categoryBreakdownChart', 
+            {{ cat_labels|tojson }}, 
+            {{ cat_values|tojson }}
+        );
+
+        initBarChart('consumptionLeaderChart',
+            {{ top_consumed|map(attribute=0)|list|tojson }},
+            {{ top_consumed|map(attribute=1)|list|tojson }}
+        );
+    });
+</script>
+{% endblock %}

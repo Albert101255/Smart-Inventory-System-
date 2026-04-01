@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Staff Dashboard{% endblock %}
+{% block header %}Terminal — Floor Ops{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: 30px;">
+    <div style="margin-bottom: 10px;">
+        <h1 class="mis-text" style="font-size: 48px;">HELLO, {{ current_user.name.split(' ')[0]|upper }}</h1>
+        <p style="font-size: 12px; margin-top: 5px; opacity: 0.6;">SYSTEM READY / STATION ID: STAFF_{{ current_user.id }}</p>
+    </div>
+
+    <div class="grid-2" style="grid-template-columns: 1.2fr 0.8fr; align-items: start;">
+        <!-- Quick Transaction -->
+        <div class="riso-card">
+            <h3 class="riso-label" style="font-size: 12px; margin-bottom: 25px;">Quick Stock Action</h3>
+            
+            <form method="POST" action="{{ url_for('stock.transaction') }}">
+                {{ form.hidden_tag() }}
+                
+                <div class="mb-20">
+                    <label class="riso-label">Product Lookup</label>
+                    {{ form.product_id(class="riso-input", id="staff-product-select") }}
+                </div>
+
+                <div id="product-stats" class="mb-20 hidden" style="background: rgba(255,230,109,0.2); padding: 15px; border-radius: 4px; border: 1px dashed var(--riso-yellow);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                        <div>
+                            <div class="riso-label" style="margin-bottom: 3px;">Current Balance</div>
+                            <div id="current-qty-val" style="font-size: 24px; font-weight: bold;">--</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="riso-label" style="margin-bottom: 3px;">Unit</div>
+                            <div id="unit-val" style="font-weight: bold;">--</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-20">
+                    <label class="riso-label">Action Type</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <label class="type-btn active" data-type="IN">
+                            <input type="radio" name="transaction_type" value="IN" class="hidden" checked>
+                            <span>STOCK IN (+)</span>
+                        </label>
+                        <label class="type-btn" data-type="OUT">
+                            <input type="radio" name="transaction_type" value="OUT" class="hidden">
+                            <span>STOCK OUT (-)</span>
+                        </label>
+                    </div>
+                    <input type="hidden" name="transaction_type" id="staff-t-type" value="IN">
+                </div>
+
+                <div class="mb-20">
+                    <label class="riso-label">Quantity</label>
+                    {{ form.quantity(class="riso-input", placeholder="Enter count...") }}
+                </div>
+
+                <div class="mb-20">
+                    <label class="riso-label">Memo (Optional)</label>
+                    {{ form.note(class="riso-input", placeholder="Ref, usage, etc.") }}
+                </div>
+
+                <button type="submit" class="riso-btn btn-primary w-full" style="justify-content: center; padding: 15px; font-size: 13px;">
+                    RECORD EVENT
+                </button>
+            </form>
+        </div>
+
+        <!-- Recent Logs -->
+        <div class="riso-card">
+            <h3 class="riso-label" style="font-size: 11px; margin-bottom: 20px;">My Recent Activity</h3>
+            <div class="alerts-list">
+                {% for t in recent %}
+                <div style="padding: 12px 0; border-bottom: 1px dashed rgba(26,35,126,0.1);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span style="font-weight: bold; font-size: 12px;">{{ t.product.name }}</span>
+                        <span class="badge badge-{{ t.transaction_type|lower }}">{{ t.transaction_type }}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 10px; opacity: 0.6;">
+                        <span>{{ t.quantity }} {{ t.product.unit }}</span>
+                        <span>{{ t.created_at.strftime('%H:%M Today') }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+                {% if not recent %}
+                <p style="text-align: center; padding: 40px; font-size: 11px; opacity: 0.5;">No transactions recorded today.</p>
+                {% endif %}
+            </div>
+            <div style="margin-top: 20px;">
+                <a href="{{ url_for('stock.history') }}" class="riso-btn btn-ghost w-full" style="justify-content: center; font-size: 9px;">VIEW MY FULL HISTORY</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .type-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px;
+        border: 2px solid var(--riso-navy);
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: bold;
+        cursor: none !important;
+        background: white;
+        transition: all 0.1s;
+    }
+    .type-btn.active[data-type="IN"] { background: var(--riso-teal); color: var(--riso-navy); transform: translate(-2px, -2px); box-shadow: 2px 2px 0 var(--riso-navy); }
+    .type-btn.active[data-type="OUT"] { background: var(--riso-coral); color: white; transform: translate(-2px, -2px); box-shadow: 2px 2px 0 var(--riso-navy); }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const productSelect = document.getElementById('staff-product-select');
+        const statsBox = document.getElementById('product-stats');
+        const qtyVal = document.getElementById('current-qty-val');
+        const unitVal = document.getElementById('unit-val');
+
+        productSelect.addEventListener('change', function() {
+            if (this.value) {
+                // In a real app, this would be an AJAX call. 
+                // For this mock, we parse the text from the select option.
+                const optionText = this.options[this.selectedIndex].text;
+                const match = optionText.match(/Stock: (\d+) (.+)$/);
+                if (match) {
+                    qtyVal.textContent = match[1];
+                    unitVal.textContent = match[2];
+                    statsBox.classList.remove('hidden');
+                }
+            } else {
+                statsBox.classList.add('hidden');
+            }
+        });
+
+        document.querySelectorAll('.type-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('staff-t-type').value = btn.dataset.type;
+            });
+        });
+    });
+</script>
+{% endblock %}

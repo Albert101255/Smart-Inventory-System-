@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}System Alerts{% endblock %}
+{% block header %}Alerts & Notifications{% endblock %}
+
+{% block content %}
+<div class="riso-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <div style="display: flex; gap: 15px; align-items: center;">
+            <h3 class="riso-label" style="font-size: 11px; margin-bottom: 0;">Unread Messages ({{ unread_count }})</h3>
+            
+            <form action="{{ url_for('reports.alerts_page') }}" method="GET" id="alert-filter-form">
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: bold; cursor: none !important;">
+                    <input type="checkbox" name="show_read" value="true" onchange="this.form.submit()" {{ 'checked' if show_read }}>
+                    Include Resolved Alerts
+                </label>
+            </form>
+        </div>
+
+        <form action="{{ url_for('reports.dismiss_all_alerts') }}" method="POST">
+            <button type="submit" class="riso-btn btn-primary" {{ 'disabled' if unread_count == 0 }}>
+                MARK ALL AS READ
+            </button>
+        </form>
+    </div>
+
+    <table class="riso-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Alert Message</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for alert in alerts %}
+            <tr style="{{ 'opacity: 0.5;' if alert.is_read }}">
+                <td style="font-size: 10px; color: rgba(26,35,126,0.6);">{{ alert.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>
+                    <span class="badge badge-{{ 'danger' if 'OUT_OF_STOCK' in alert.alert_type else 'warn' }}">
+                        {{ alert.alert_type }}
+                    </span>
+                </td>
+                <td>
+                    <div style="font-weight: bold; {{ 'text-decoration: line-through;' if alert.is_read }}">{{ alert.message }}</div>
+                    <div style="font-size: 9px; opacity: 0.6;">REF: #ALR-{{ alert.id }}</div>
+                </td>
+                <td class="text-right">
+                    {% if not alert.is_read %}
+                    <form action="{{ url_for('reports.dismiss_alert', alert_id=alert.id) }}" method="POST">
+                        <button type="submit" class="riso-btn btn-teal" style="font-size: 9px; padding: 4px 10px;">ACKNOWLEDGE</button>
+                    </form>
+                    {% else %}
+                    <span style="font-size: 9px; font-weight: bold; color: var(--riso-teal);">RESOLVED</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            {% if not alerts %}
+            <tr>
+                <td colspan="4" style="text-align: center; padding: 80px;">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.1; margin-bottom: 15px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    <div style="opacity: 0.5; font-size: 11px;">Zero active alerts. System healthy.</div>
+                </td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+
+    {% if pagination.pages > 1 %}
+    <div class="pagination">
+        {% if pagination.has_prev %}
+        <a href="{{ url_for('reports.alerts_page', page=pagination.prev_num, show_read=show_read) }}" class="page-link">← PREV</a>
+        {% endif %}
+        
+        {% for page_num in pagination.iter_pages() %}
+            {% if page_num %}
+                <a href="{{ url_for('reports.alerts_page', page=page_num, show_read=show_read) }}" 
+                   class="page-link {{ 'active' if page_num == pagination.page }}">
+                    {{ page_num }}
+                </a>
+            {% endif %}
+        {% endfor %}
+        
+        {% if pagination.has_next %}
+        <a href="{{ url_for('reports.alerts_page', page=pagination.next_num, show_read=show_read) }}" class="page-link">NEXT →</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

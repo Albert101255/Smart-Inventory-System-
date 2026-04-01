@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Transaction{% endblock %}
+{% block header %}Stock Room Controls{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+    <div class="riso-card">
+        <h3 class="riso-label" style="font-size: 11px; margin-bottom: 25px;">New Inventory Event</h3>
+        
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+            
+            <div class="mb-20">
+                <label class="riso-label">Select Product</label>
+                {{ form.product_id(class="riso-input") }}
+                {% for error in form.product_id.errors %}
+                <span style="color: var(--riso-coral); font-size: 10px;">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="mb-20">
+                <label class="riso-label">Transaction Type</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                    <label class="type-btn {{ 'active' if form.transaction_type.data == 'IN' }}">
+                        <input type="radio" name="transaction_type" value="IN" class="hidden" {{ 'checked' if form.transaction_type.data == 'IN' }}>
+                        <span>STOCK IN</span>
+                    </label>
+                    <label class="type-btn {{ 'active' if form.transaction_type.data == 'OUT' }}">
+                        <input type="radio" name="transaction_type" value="OUT" class="hidden" {{ 'checked' if form.transaction_type.data == 'OUT' }}>
+                        <span>STOCK OUT</span>
+                    </label>
+                    <label class="type-btn {{ 'active' if form.transaction_type.data == 'ADJUSTMENT' }}">
+                        <input type="radio" name="transaction_type" value="ADJUSTMENT" class="hidden" {{ 'checked' if form.transaction_type.data == 'ADJUSTMENT' }}>
+                        <span>ADJUST</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="mb-20">
+                <label class="riso-label">Quantity</label>
+                {{ form.quantity(class="riso-input", placeholder="Amount...") }}
+                {% for error in form.quantity.errors %}
+                <span style="color: var(--riso-coral); font-size: 10px;">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="mb-20">
+                <label class="riso-label">Event Memo / Note</label>
+                {{ form.note(class="riso-input", rows="3", placeholder="Reason for transaction, invoice ref, etc.") }}
+            </div>
+
+            <div style="margin-top: 30px;">
+                <button type="submit" class="riso-btn btn-primary w-full" style="justify-content: center; padding: 12px;">
+                    COMMIT TRANSACTION TO LEDGER
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="riso-card mt-20" style="padding: 15px;">
+        <h4 class="riso-label" style="font-size: 9px;">System Status Indicator</h4>
+        <div style="font-size: 10px; line-height: 1.5; opacity: 0.6;">
+            All transactions are logged with date, time, and user ID. 
+            Stock OUT transactions trigger automatic replenishment forecasts.
+        </div>
+    </div>
+</div>
+
+<style>
+    .type-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px;
+        border: 2px solid var(--riso-navy);
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: bold;
+        cursor: none !important;
+        background: white;
+        transition: all 0.1s;
+    }
+    .type-btn:hover { background: var(--riso-cream); }
+    .type-btn.active {
+        background: var(--riso-yellow);
+        transform: translate(-2px, -2px);
+        box-shadow: 2px 2px 0 var(--riso-navy);
+    }
+    .type-btn[data-type="OUT"].active { background: var(--riso-coral); color: white; }
+    .type-btn[data-type="IN"].active { background: var(--riso-teal); }
+</style>
+
+<script>
+    document.querySelectorAll('.type-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+    });
+</script>
+{% endblock %}

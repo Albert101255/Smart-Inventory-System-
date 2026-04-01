@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }} Details{% endblock %}
+{% block header %}Product Inspector{% endblock %}
+
+{% block content %}
+<div class="grid-2 mb-20">
+    <!-- Main Info -->
+    <div class="riso-card">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px;">
+            <div>
+                <h1 class="mis-text" style="font-size: 32px; margin-bottom: 5px;">{{ product.name }}</h1>
+                <span style="font-family: monospace; font-size: 12px; color: rgba(26,35,126,0.6);">SER_NO: {{ product.sku }}</span>
+            </div>
+            <div style="text-align: right;">
+                <span class="badge badge-{{ 'ok' if product.quantity > product.minimum_threshold else 'danger' }}" style="font-size: 12px; padding: 6px 12px;">
+                    {{ 'HEALTHY STOCK' if product.quantity > product.minimum_threshold else 'LOW STOCK LEVEL' if product.quantity > 0 else 'OUT OF STOCK' }}
+                </span>
+                <div style="font-size: 9px; margin-top: 8px; color: rgba(26,35,126,0.5);">LAST INSPECTED: {{ now.strftime('%H:%M') if now else 'LIVE' }}</div>
+            </div>
+        </div>
+
+        <div class="grid-2 mb-20">
+            <div>
+                <label class="riso-label">Category</label>
+                <div style="font-weight: bold; border-left: 3px solid var(--riso-teal); padding-left: 10px;">{{ product.category.name if product.category else 'Uncategorized' }}</div>
+            </div>
+            <div>
+                <label class="riso-label">Current Inventory</label>
+                <div style="font-size: 24px; font-weight: bold; color: var(--riso-navy);">{{ product.quantity }} <span style="font-size: 14px; opacity: 0.5;">{{ product.unit }}</span></div>
+            </div>
+        </div>
+
+        <div class="mb-20">
+            <label class="riso-label">Stock Status Visualization</label>
+            <div class="stock-bar-wrap" style="height: 30px; margin-top: 10px;">
+                <div class="stock-bar" style="height: 12px;">
+                    {% set pct = (product.quantity / product.maximum_capacity * 100)|int if product.maximum_capacity > 0 else 0 %}
+                    <div class="stock-fill-{{ 'ok' if product.quantity > product.minimum_threshold else 'low' }}" style="width: {{ pct if pct <= 100 else 100 }}%;"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 9px; margin-top: 15px; color: rgba(26,35,126,0.5); width: 100%;">
+                    <span>0 (EMPTY)</span>
+                    <span style="color: var(--riso-coral); font-weight: bold;">MIN: {{ product.minimum_threshold }}</span>
+                    <span>MAX: {{ product.maximum_capacity }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-3 mb-20" style="background: rgba(26,35,126,0.03); padding: 15px; border-radius: 4px;">
+            <div>
+                <label class="riso-label">Purchase Price</label>
+                <div style="font-weight: bold;">${{ "{:,.2f}".format(product.purchase_price) if product.purchase_price else '0.00' }}</div>
+            </div>
+            <div>
+                <label class="riso-label">Selling Price</label>
+                <div style="font-weight: bold; color: var(--riso-teal);">${{ "{:,.2f}".format(product.selling_price) if product.selling_price else '0.00' }}</div>
+            </div>
+            <div>
+                <label class="riso-label">Profit Margin</label>
+                {% if product.purchase_price and product.selling_price %}
+                <div style="font-weight: bold;">{{ ((product.selling_price - product.purchase_price) / product.purchase_price * 100)|int }}%</div>
+                {% else %}
+                <div>N/A</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div>
+            <label class="riso-label">Primary Supplier</label>
+            <div style="font-size: 14px;">{{ product.supplier or 'None Specified' }}</div>
+        </div>
+
+        <div style="margin-top: 40px; display: flex; gap: 10px;">
+            {% if current_user.role == 'admin' %}
+            <a href="{{ url_for('products.edit_product', product_id=product.id) }}" class="riso-btn btn-yellow" style="flex: 1; justify-content: center;">EDIT SPECIFICATIONS</a>
+            {% endif %}
+            <a href="{{ url_for('stock.transaction', product_id=product.id) }}" class="riso-btn btn-primary" style="flex: 1; justify-content: center;">RECORD TRANSACTION</a>
+        </div>
+    </div>
+
+    <!-- Prediction & History -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        <!-- Prediction Card -->
+        <div class="riso-card" style="background: var(--riso-yellow); border-color: #8B6914;">
+            <h3 class="riso-label" style="font-size: 11px; margin-bottom: 20px; color: #8B6914;">Smart Stock Forecast</h3>
+            {% if prediction %}
+            <div style="display: flex; gap: 20px; align-items: center;">
+                <div style="text-align: center;">
+                    <div style="font-size: 48px; font-weight: 900; line-height: 1; color: {{ 'var(--riso-coral)' if prediction.predicted_days_remaining < 7 else 'var(--riso-navy)' }}">
+                        {{ prediction.predicted_days_remaining }}
+                    </div>
+                    <div style="font-size: 9px; text-transform: uppercase; font-weight: bold;">DAYS LEFT</div>
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-size: 13px; font-weight: bold; margin-bottom: 5px;">
+                        {{ 'CRITICAL: RESTOCK NOW' if prediction.predicted_days_remaining < 7 else 'WARNING: MONITOR USAGE' if prediction.predicted_days_remaining < 14 else 'STATUS: HEALTHY' }}
+                    </div>
+                    <p style="font-size: 11px; line-height: 1.4; opacity: 0.7;">
+                        Based on consumption of <strong>{{ prediction.average_daily_consumption|round(1) }}</strong> units/day, 
+                        stock is expected to deplete on <strong>{{ prediction.predicted_stockout_date.strftime('%d %B, %Y') }}</strong>.
+                    </p>
+                </div>
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 20px;">
+                <p style="font-size: 11px; opacity: 0.5;">Insufficient transaction history to generate accurate prediction.</p>
+                <div class="riso-btn btn-ghost" style="font-size: 9px; margin-top: 10px; cursor: default !important;">PENDING DATA COLLECTION</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Recent History -->
+        <div class="riso-card" style="flex: 1;">
+            <h3 class="riso-label" style="font-size: 11px; margin-bottom: 15px;">Transaction History (Last 10)</h3>
+            <table class="riso-table" style="font-size: 10px;">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Qty</th>
+                        <th>User</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in history[:10] %}
+                    <tr>
+                        <td>{{ t.created_at.strftime('%d/%m/%y') }}</td>
+                        <td><span class="badge badge-{{ t.transaction_type|lower }}" style="font-size: 7px; padding: 1px 4px;">{{ t.transaction_type }}</span></td>
+                        <td style="font-weight: bold;">{{ t.quantity }}</td>
+                        <td style="font-size: 9px;">{{ t.user.name.split(' ')[0] if t.user else 'System' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div style="margin-top: 15px; text-align: right;">
+                <a href="{{ url_for('stock.history', product_id=product.id) }}" style="font-size: 9px; color: var(--riso-navy); font-weight: bold;">VIEW FULL LOG →</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

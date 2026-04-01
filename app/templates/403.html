@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>403 Forbidden — STOCKR</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="login-wrap">
+    <canvas id="grain"></canvas>
+    
+    <div id="cursor">
+        <div id="cursor-shadow"></div>
+        <div id="cursor-ring"></div>
+        <div id="cursor-dot"></div>
+    </div>
+
+    <div class="riso-card login-card" style="text-align: center; transform: rotate(2deg);">
+        <h1 class="mis-text" style="font-size: 80px; margin-bottom: 10px;">403</h1>
+        <h2 style="text-transform: uppercase; letter-spacing: 0.1em; color: var(--riso-coral); margin-bottom: 20px;">Access Denied</h2>
+        <p style="margin-bottom: 30px; font-size: 14px;">You do not have permission to view this page.</p>
+        <a href="{{ url_for('admin.dashboard') }}" class="riso-btn btn-primary" style="width: 100%; justify-content: center;">Back to Dashboard</a>
+    </div>
+
+    <p style="margin-top: 30px; font-size: 10px; opacity: 0.5; text-transform: uppercase;">System Error Log Ref: AUTH_ERR_403</p>
+
+    <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+</body>
+</html>

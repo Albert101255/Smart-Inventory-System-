@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}User Management{% endblock %}
+{% block header %}User Directory{% endblock %}
+
+{% block content %}
+<div class="grid-2">
+    <!-- User List -->
+    <div class="riso-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 class="riso-label" style="font-size: 11px; margin-bottom: 0;">System Access Log</h3>
+            <a href="{{ url_for('admin.users') }}" class="riso-btn btn-teal {{ 'hidden' if mode }}">REFRESH LIST</a>
+        </div>
+        <table class="riso-table">
+            <thead>
+                <tr>
+                    <th>Name / Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr class="{{ 'active-row' if user and u.id == user.id }}">
+                    <td>
+                        <div style="font-weight: bold;">{{ u.name }}</div>
+                        <div style="font-size: 10px; color: rgba(26,35,126,0.6);">{{ u.email }}</div>
+                    </td>
+                    <td><span class="badge badge-{{ u.role }}">{{ u.role }}</span></td>
+                    <td>
+                        {% if u.is_active %}
+                        <span style="color: var(--riso-teal); font-size: 9px; font-weight: bold;">● ACTIVE</span>
+                        {% else %}
+                        <span style="color: var(--riso-coral); font-size: 9px; font-weight: bold;">○ INACTIVE</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-right">
+                        <div style="display: flex; gap: 5px; justify-content: flex-end;">
+                            <a href="{{ url_for('admin.edit_user', user_id=u.id) }}" class="riso-btn btn-yellow" style="padding: 4px 8px; font-size: 9px;">EDIT</a>
+                            {% if u.id != 1 %}
+                            <button onclick="confirmDelete('Delete user {{ u.name }}? Access will be revoked immediately.', '{{ url_for('admin.delete_user', user_id=u.id) }}')" class="riso-btn btn-danger" style="padding: 4px 8px; font-size: 9px;">DEL</button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- User Form (Add/Edit) -->
+    <div class="riso-card">
+        <h3 class="riso-label" style="font-size: 11px; margin-bottom: 25px;">
+            {% if mode == 'edit' %}EDIT SYSTEM USER: {{ user.name }}{% else %}ADD NEW SYSTEM USER{% endif %}
+        </h3>
+        
+        <form method="POST" action="{{ url_for('admin.edit_user', user_id=user.id) if mode == 'edit' else url_for('admin.add_user') }}">
+            {{ form.hidden_tag() }}
+            
+            <div class="mb-20">
+                <label class="riso-label">Full Name</label>
+                {{ form.name(class="riso-input", placeholder="John Doe") }}
+                {% for error in form.name.errors %}
+                <span style="color: var(--riso-coral); font-size: 10px;">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="mb-20">
+                <label class="riso-label">Email Address</label>
+                {{ form.email(class="riso-input", placeholder="john@company.com") }}
+                {% for error in form.email.errors %}
+                <span style="color: var(--riso-coral); font-size: 10px;">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="mb-20">
+                <label class="riso-label">Password {% if mode == 'edit' %}<span style="color: rgba(26,35,126,0.4); text-transform: none;">(leave blank to keep current)</span>{% endif %}</label>
+                {{ form.password(class="riso-input", placeholder="••••••••") }}
+                {% for error in form.password.errors %}
+                <span style="color: var(--riso-coral); font-size: 10px;">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="grid-2 mb-20">
+                <div>
+                    <label class="riso-label">Access Level</label>
+                    {{ form.role(class="riso-input") }}
+                </div>
+                <div style="display: flex; align-items: flex-end; padding-bottom: 10px; gap: 8px;">
+                    {{ form.is_active(style="cursor: none;") }}
+                    <label class="riso-label" style="margin-bottom: 0;">Account Active</label>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px; display: flex; gap: 10px;">
+                <button type="submit" class="riso-btn btn-primary" style="flex: 1; justify-content: center;">
+                    {% if mode == 'edit' %}UPDATE ACCOUNT{% else %}CREATE ACCOUNT{% endif %}
+                </button>
+                {% if mode %}
+                <a href="{{ url_for('admin.users') }}" class="riso-btn btn-ghost">CANCEL</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

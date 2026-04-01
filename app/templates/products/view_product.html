@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card shadow">
+            <div class="card-header border-0">
+                <h3 class="mb-0">Product Details</h3>
+            </div>
+            <div class="card-body">
+                <h4 class="text-primary">{{ product.name }}</h4>
+                <p class="text-muted">SKU: {{ product.sku }}</p>
+                <hr>
+                <div class="row mb-3">
+                    <div class="col-6 text-muted">Category:</div>
+                    <div class="col-6 fw-bold">{{ product.category.name if product.category else 'N/A' }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-6 text-muted">Current Stock:</div>
+                    <div class="col-6">
+                        <span class="badge bg-{{ 'danger' if product.quantity == 0 else 'warning' if product.quantity < product.minimum_threshold else 'success' }}">
+                            {{ product.quantity }} {{ product.unit }}
+                        </span>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-6 text-muted">Selling Price:</div>
+                    <div class="col-6 fw-bold">${{ product.selling_price }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-6 text-muted">Supplier:</div>
+                    <div class="col-6">{{ product.supplier or 'N/A' }}</div>
+                </div>
+                <hr>
+                <div class="d-grid gap-2">
+                    {% if current_user.role == 'admin' %}
+                    <a href="{{ url_for('products.edit_product', product_id=product.id) }}" class="btn btn-primary">Edit Product</a>
+                    <a href="{{ url_for('stock.adjust') }}?product_id={{ product.id }}" class="btn btn-warning">Adjust Stock</a>
+                    {% endif %}
+                    <a href="{{ url_for('stock.stock_in') }}?product_id={{ product.id }}" class="btn btn-success">Stock IN</a>
+                    <a href="{{ url_for('stock.stock_out') }}?product_id={{ product.id }}" class="btn btn-danger">Stock OUT</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header border-0">
+                <h3 class="mb-0">Recent Transactions</h3>
+            </div>
+            <div class="table-responsive">
+                <table class="table align-items-center table-flush">
+                    <thead class="thead-light">
+                        <tr>
+                            <th scope="col">Type</th>
+                            <th scope="col">Quantity</th>
+                            <th scope="col">Note</th>
+                            <th scope="col">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in transactions %}
+                        <tr>
+                            <td>
+                                <span class="badge bg-{{ 'success' if transaction.transaction_type == 'IN' else 'danger' if transaction.transaction_type == 'OUT' else 'info' }}">
+                                    {{ transaction.transaction_type }}
+                                </span>
+                            </td>
+                            <td>{{ transaction.quantity }}</td>
+                            <td>{{ transaction.note }}</td>
+                            <td>{{ transaction.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

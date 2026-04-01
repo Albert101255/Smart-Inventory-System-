@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Add Product{% endblock %}
+{% block header %}Catalog Registration{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+    <div class="riso-card">
+        <h3 class="riso-label" style="font-size: 11px; margin-bottom: 25px;">Product Specification Entry</h3>
+        
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+            
+            <div class="mb-20">
+                <label class="riso-label">Product Name / Identifier</label>
+                {{ form.name(class="riso-input", placeholder="e.g. Premium White Ink - 1Liter") }}
+                {% for error in form.name.errors %}
+                <span style="color: var(--riso-coral); font-size: 10px;">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="grid-2 mb-20">
+                <div>
+                    <label class="riso-label">SKU / Serial No.</label>
+                    {{ form.sku(class="riso-input", placeholder="INK-W-01") }}
+                    {% for error in form.sku.errors %}
+                    <span style="color: var(--riso-coral); font-size: 10px;">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                <div>
+                    <label class="riso-label">Inventory Category</label>
+                    {{ form.category_id(class="riso-input") }}
+                </div>
+            </div>
+
+            <div class="grid-2 mb-20">
+                <div>
+                    <label class="riso-label">Initial Quantity</label>
+                    {{ form.quantity(class="riso-input", placeholder="0") }}
+                    {% for error in form.quantity.errors %}
+                    <span style="color: var(--riso-coral); font-size: 10px;">{{ error }}</span>
+                    {% endfor %}
+                </div>
+                <div>
+                    <label class="riso-label">Unit of Measure</label>
+                    {{ form.unit(class="riso-input", placeholder="liters, units, packs") }}
+                    {% for error in form.unit.errors %}
+                    <span style="color: var(--riso-coral); font-size: 10px;">{{ error }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="grid-2 mb-20">
+                <div style="border: 2px dashed rgba(255,107,107,0.3); padding: 15px; border-radius: 4px;">
+                    <label class="riso-label" style="color: var(--riso-coral);">Minimum Threshold (Low Stock Alert)</label>
+                    {{ form.minimum_threshold(class="riso-input", placeholder="10") }}
+                    <p style="font-size: 9px; margin-top: 5px; opacity: 0.6;">System will trigger alerts when stock reaches this level.</p>
+                </div>
+                <div style="border: 2px dashed rgba(78,205,196,0.3); padding: 15px; border-radius: 4px;">
+                    <label class="riso-label" style="color: var(--riso-teal);">Maximum Capacity</label>
+                    {{ form.maximum_capacity(class="riso-input", placeholder="100") }}
+                    <p style="font-size: 9px; margin-top: 5px; opacity: 0.6;">Used for storage optimization and progress bars.</p>
+                </div>
+            </div>
+
+            <div class="grid-3 mb-20">
+                <div>
+                    <label class="riso-label">Purchase Price</label>
+                    {{ form.purchase_price(class="riso-input", placeholder="0.00") }}
+                </div>
+                <div>
+                    <label class="riso-label">Selling Price</label>
+                    {{ form.selling_price(class="riso-input", placeholder="0.00") }}
+                </div>
+                <div>
+                    <label class="riso-label">Supplier Name</label>
+                    {{ form.supplier(class="riso-input", placeholder="Global Ink Corp") }}
+                </div>
+            </div>
+
+            <div style="margin-top: 40px; display: flex; gap: 15px; border-top: 2px solid var(--riso-navy); padding-top: 25px;">
+                <button type="submit" class="riso-btn btn-primary" style="flex: 1; justify-content: center; padding: 12px;">
+                    REGISTER PRODUCT TO CATALOG
+                </button>
+                <a href="{{ url_for('products.list_products') }}" class="riso-btn btn-ghost" style="padding: 12px 24px;">CANCEL</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — STOCKR</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="login-wrap">
+    <!-- Custom cursor -->
+    <div id="cursor">
+        <div id="cursor-shadow"></div>
+        <div id="cursor-ring"></div>
+        <div id="cursor-dot"></div>
+    </div>
+    
+    <!-- Grain overlay canvas -->
+    <canvas id="grain"></canvas>
+
+    <div style="text-align: center; margin-bottom: 20px;">
+        <h1 class="mis-text login-logo">STOCKR</h1>
+        <p style="font-size: 10px; letter-spacing: 0.3em; color: var(--riso-navy); opacity: 0.6;">INVENTORY MANAGEMENT SYSTEM v2.1</p>
+    </div>
+
+    <div class="riso-card login-card">
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+            
+            <div class="mb-20">
+                <label class="riso-label">Email Address</label>
+                {{ form.email(class="riso-input", placeholder="name@company.com") }}
+                {% for error in form.email.errors %}
+                <span style="color: var(--riso-coral); font-size: 10px;">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="mb-20">
+                <label class="riso-label">Password</label>
+                {{ form.password(class="riso-input", placeholder="••••••••") }}
+                {% for error in form.password.errors %}
+                <span style="color: var(--riso-coral); font-size: 10px;">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="mb-20" style="display: flex; align-items: center; gap: 8px;">
+                {{ form.remember_me(style="cursor: none;") }}
+                <label class="riso-label" style="margin-bottom: 0;">Keep me signed in</label>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div style="color: var(--riso-coral); font-size: 11px; margin-bottom: 15px; font-weight: bold;">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <button type="submit" class="riso-btn btn-primary w-full" style="justify-content: center; padding: 12px;">
+                LOGIN TO SYSTEM
+            </button>
+        </form>
+    </div>
+
+    <div style="margin-top: 40px; text-align: center; max-width: 300px;">
+        <p style="font-size: 9px; line-height: 1.6; color: rgba(26,35,126,0.5);">
+            This is a restricted corporate system. Unauthorized access is strictly prohibited and monitored. 
+            © 2026 ANTIGRAVITY LABS.
+        </p>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+</body>
+</html>

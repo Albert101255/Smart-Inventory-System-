@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ product.name }}{% endblock %}
+{% block header %}Product Lifecycle Management{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+    <div class="riso-card">
+        <h3 class="riso-label" style="font-size: 11px; margin-bottom: 25px;">Record Update: {{ product.sku }}</h3>
+        
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+            
+            <div class="mb-20">
+                <label class="riso-label">Product Name / Identifier</label>
+                {{ form.name(class="riso-input") }}
+                {% for error in form.name.errors %}
+                <span style="color: var(--riso-coral); font-size: 10px;">{{ error }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="grid-2 mb-20">
+                <div>
+                    <label class="riso-label">SKU / Serial No. (Immutable)</label>
+                    <input type="text" class="riso-input" value="{{ product.sku }}" disabled style="opacity: 0.6; background: rgba(0,0,0,0.05);">
+                    {{ form.sku(class="hidden") }}
+                </div>
+                <div>
+                    <label class="riso-label">Inventory Category</label>
+                    {{ form.category_id(class="riso-input") }}
+                </div>
+            </div>
+
+            <div class="grid-2 mb-20">
+                <div>
+                    <label class="riso-label">Current Physical Inventory</label>
+                    <input type="text" class="riso-input" value="{{ product.quantity }} {{ product.unit }}" disabled style="opacity: 0.6; background: rgba(0,0,0,0.05);">
+                    <p style="font-size: 9px; margin-top: 5px; color: var(--riso-coral);">To change quantity, record a Stock Transaction.</p>
+                    {{ form.quantity(class="hidden") }}
+                </div>
+                <div>
+                    <label class="riso-label">Unit of Measure</label>
+                    {{ form.unit(class="riso-input") }}
+                </div>
+            </div>
+
+            <div class="grid-2 mb-20">
+                <div style="border: 2px dashed rgba(255,107,107,0.3); padding: 15px; border-radius: 4px;">
+                    <label class="riso-label" style="color: var(--riso-coral);">Minimum Threshold</label>
+                    {{ form.minimum_threshold(class="riso-input") }}
+                </div>
+                <div style="border: 2px dashed rgba(78,205,196,0.3); padding: 15px; border-radius: 4px;">
+                    <label class="riso-label" style="color: var(--riso-teal);">Maximum Capacity</label>
+                    {{ form.maximum_capacity(class="riso-input") }}
+                </div>
+            </div>
+
+            <div class="grid-3 mb-20">
+                <div>
+                    <label class="riso-label">Purchase Price</label>
+                    {{ form.purchase_price(class="riso-input") }}
+                </div>
+                <div>
+                    <label class="riso-label">Selling Price</label>
+                    {{ form.selling_price(class="riso-input") }}
+                </div>
+                <div>
+                    <label class="riso-label">Supplier Name</label>
+                    {{ form.supplier(class="riso-input") }}
+                </div>
+            </div>
+
+            <div style="margin-top: 40px; display: flex; gap: 15px; border-top: 2px solid var(--riso-navy); padding-top: 25px;">
+                <button type="submit" class="riso-btn btn-yellow" style="flex: 1; justify-content: center; padding: 12px;">
+                    COMMIT UPDATES TO DATABASE
+                </button>
+                <a href="{{ url_for('products.list_products') }}" class="riso-btn btn-ghost" style="padding: 12px 24px;">CANCEL</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

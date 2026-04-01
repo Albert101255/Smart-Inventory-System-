@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Predictions{% endblock %}
+{% block header %}Predictive Analytics Engine{% endblock %}
+
+{% block content %}
+<div class="riso-card mb-20" style="background: var(--riso-navy); color: white;">
+    <h3 class="riso-label" style="color: rgba(255,255,255,0.5); font-size: 10px; margin-bottom: 10px;">Algorithm Methodology</h3>
+    <p style="font-size: 12px; line-height: 1.6; opacity: 0.9;">
+        Our Stockr-Predict™ engine analyzes 60 days of historical stock-out events to calculate 
+        a rolling <span style="color: var(--riso-yellow); font-weight: bold;">Average Daily Consumption</span> rate. 
+        The stockout date is projected by applying this rate against current physical inventory levels. 
+        <span style="color: var(--riso-coral); font-weight: bold;">Critical alerts</span> are triggered when depletion is expected within 7 days.
+    </p>
+</div>
+
+<div class="riso-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <h3 class="riso-label" style="font-size: 11px; margin-bottom: 0;">Restock Prioritization Ledger</h3>
+        <div style="font-size: 9px; opacity: 0.5;">LAST BATCH CALCULATION: {{ now.strftime('%H:%M:%S') if now else 'LIVE' }}</div>
+    </div>
+
+    <table class="riso-table">
+        <thead>
+            <tr>
+                <th>Product Name</th>
+                <th>Current Level</th>
+                <th>Consumption Rate</th>
+                <th>Days Remaining</th>
+                <th>Est. Stockout Date</th>
+                <th>Priority</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in prediction_data %}
+            <tr style="{{ 'border-left: 5px solid var(--riso-coral);' if item.status == 'critical' else 'border-left: 5px solid var(--riso-yellow);' if item.status == 'warning' else '' }}">
+                <td>
+                    <div style="font-weight: bold;">{{ item.product.name }}</div>
+                    <div style="font-size: 9px; opacity: 0.5;">SKU: {{ item.product.sku }}</div>
+                </td>
+                <td>{{ item.product.quantity }} {{ item.product.unit }}</td>
+                <td><strong>{{ item.prediction.average_daily_consumption|round(2) }}</strong> <span style="font-size: 10px; opacity: 0.5;">/day</span></td>
+                <td>
+                    <div style="font-size: 18px; font-weight: 900; color: {{ 'var(--riso-coral)' if item.status == 'critical' else 'var(--riso-navy)' }}">
+                        {{ item.prediction.predicted_days_remaining }}
+                    </div>
+                </td>
+                <td style="font-weight: bold;">{{ item.prediction.predicted_stockout_date.strftime('%d %b, %Y') }}</td>
+                <td>
+                    <span class="badge badge-{{ 'danger' if item.status == 'critical' else 'warn' if item.status == 'warning' else 'ok' }}">
+                        {{ item.status|upper }}
+                    </span>
+                </td>
+            </tr>
+            {% endfor %}
+            {% if not prediction_data %}
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 60px; opacity: 0.5;">
+                    Insufficient data to generate predictions. Recording more 'Stock OUT' transactions will calibrate the engine.
+                </td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

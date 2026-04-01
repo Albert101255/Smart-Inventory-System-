@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Stock History{% endblock %}
+{% block header %}Inventory Ledger{% endblock %}
+
+{% block content %}
+<div class="riso-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+        <div style="display: flex; gap: 15px; align-items: center;">
+            <div style="display: flex; border: 2px solid var(--riso-navy); border-radius: 4px; overflow: hidden;">
+                <a href="{{ url_for('stock.history', type='', search=search) }}" 
+                   class="nav-tab {{ 'active' if not type_filter }}">ALL</a>
+                <a href="{{ url_for('stock.history', type='IN', search=search) }}" 
+                   class="nav-tab {{ 'active' if type_filter == 'IN' }}">STOCK IN</a>
+                <a href="{{ url_for('stock.history', type='OUT', search=search) }}" 
+                   class="nav-tab {{ 'active' if type_filter == 'OUT' }}">STOCK OUT</a>
+                <a href="{{ url_for('stock.history', type='ADJUSTMENT', search=search) }}" 
+                   class="nav-tab {{ 'active' if type_filter == 'ADJUSTMENT' }}">ADJUST</a>
+            </div>
+            
+            {% if search or type_filter %}
+            <a href="{{ url_for('stock.history') }}" class="riso-btn btn-ghost" style="font-size: 9px; padding: 4px 8px;">RESET LOG</a>
+            {% endif %}
+        </div>
+
+        <a href="{{ url_for('stock.export_history') }}" class="riso-btn btn-yellow">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            EXPORT FULL LOG
+        </a>
+    </div>
+
+    <table class="riso-table">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Product</th>
+                <th>SKU</th>
+                <th>Type</th>
+                <th>Qty</th>
+                <th>Action Memo</th>
+                <th>Performed By</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in transactions %}
+            <tr>
+                <td style="font-size: 10px; color: rgba(26,35,126,0.6);">{{ t.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td style="font-weight: bold;">{{ t.product.name }}</td>
+                <td style="font-family: monospace; font-size: 9px;">{{ t.product.sku }}</td>
+                <td><span class="badge badge-{{ t.transaction_type|lower }}">{{ t.transaction_type }}</span></td>
+                <td><strong>{{ t.quantity }}</strong> <span style="font-size: 9px; opacity: 0.5;">{{ t.product.unit }}</span></td>
+                <td style="font-size: 11px; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ t.note or '' }}">
+                    {{ t.note or '—' }}
+                </td>
+                <td style="font-size: 11px;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <div class="user-avatar" style="width: 20px; height: 20px; font-size: 7px; border-width: 1px;">{{ t.user.name[:2].upper() if t.user else 'SY' }}</div>
+                        {{ t.user.name if t.user else 'System' }}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+            {% if not transactions %}
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 60px; opacity: 0.5;">
+                    No transactions recorded for the selected criteria.
+                </td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+
+    {% if pagination.pages > 1 %}
+    <div class="pagination">
+        {% if pagination.has_prev %}
+        <a href="{{ url_for('stock.history', page=pagination.prev_num, search=search, type=type_filter) }}" class="page-link">← PREV</a>
+        {% endif %}
+        
+        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if page_num %}
+                <a href="{{ url_for('stock.history', page=page_num, search=search, type=type_filter) }}" 
+                   class="page-link {{ 'active' if page_num == pagination.page }}">
+                    {{ page_num }}
+                </a>
+            {% else %}
+                <span style="padding: 8px;">...</span>
+            {% endif %}
+        {% endfor %}
+        
+        {% if pagination.has_next %}
+        <a href="{{ url_for('stock.history', page=pagination.next_num, search=search, type=type_filter) }}" class="page-link">NEXT →</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .nav-tab {
+        padding: 8px 16px;
+        font-size: 10px;
+        font-weight: bold;
+        text-decoration: none;
+        color: var(--riso-navy);
+        background: white;
+        border-right: 2px solid var(--riso-navy);
+        cursor: none !important;
+        transition: all 0.1s;
+    }
+    .nav-tab:last-child { border-right: none; }
+    .nav-tab:hover { background: var(--riso-cream); }
+    .nav-tab.active { background: var(--riso-navy); color: white; }
+</style>
+{% endblock %}

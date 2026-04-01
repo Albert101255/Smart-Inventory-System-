@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+{% block header %}Operations Dashboard{% endblock %}
+
+{% block content %}
+<div class="grid-6 mb-20">
+    <div class="stat-card" style="background: rgba(78,205,196,0.15); border-color: var(--riso-teal);">
+        <div class="stat-label">Total Products</div>
+        <div class="stat-value">{{ total_products }}</div>
+        <div style="font-size: 9px; margin-top: 5px; color: var(--riso-teal);">ACTIVE CATALOG</div>
+    </div>
+    <div class="stat-card" style="background: rgba(255,107,107,0.15); border-color: var(--riso-coral);">
+        <div class="stat-label">Low Stock</div>
+        <div class="stat-value">{{ low_stock }}</div>
+        <div style="font-size: 9px; margin-top: 5px; color: var(--riso-coral);">REORDER SOON</div>
+    </div>
+    <div class="stat-card" style="background: rgba(255,107,107,0.25); border-color: var(--riso-coral); border-width: 3px;">
+        <div class="stat-label">Out of Stock</div>
+        <div class="stat-value">{{ out_of_stock }}</div>
+        <div style="font-size: 9px; margin-top: 5px; color: var(--riso-coral); font-weight: bold;">EXTREMELY URGENT</div>
+    </div>
+    <div class="stat-card" style="background: rgba(255,230,109,0.3); border-color: #8B6914;">
+        <div class="stat-label">Transactions (Today)</div>
+        <div class="stat-value">{{ today_transactions }}</div>
+        <div style="font-size: 9px; margin-top: 5px; color: #8B6914;">LOGGED ACTIONS</div>
+    </div>
+    <div class="stat-card" style="background: rgba(106,5,114,0.1); border-color: var(--riso-purple);">
+        <div class="stat-label">Unread Alerts</div>
+        <div class="stat-value">{{ unread_alerts }}</div>
+        <div style="font-size: 9px; margin-top: 5px; color: var(--riso-purple);">ATTENTION REQ.</div>
+    </div>
+    <div class="stat-card" style="background: rgba(26,35,126,0.05); border-color: var(--riso-navy);">
+        <div class="stat-label">Categories</div>
+        <div class="stat-value">{{ total_categories }}</div>
+        <div style="font-size: 9px; margin-top: 5px; color: var(--riso-navy);">ORGANIZED GROUPS</div>
+    </div>
+</div>
+
+<div class="grid-3 mb-20">
+    <div class="riso-card" style="height: 350px; display: flex; flex-direction: column;">
+        <h3 class="riso-label" style="font-size: 11px; margin-bottom: 20px;">Top 5 Most Consumed (Last 30 Days)</h3>
+        <div style="flex: 1; min-height: 0;">
+            <canvas id="topConsumedChart"></canvas>
+        </div>
+    </div>
+    <div class="riso-card" style="height: 350px; display: flex; flex-direction: column;">
+        <h3 class="riso-label" style="font-size: 11px; margin-bottom: 20px;">Stock Movement (Last 14 Days)</h3>
+        <div style="flex: 1; min-height: 0;">
+            <canvas id="stockMovementChart"></canvas>
+        </div>
+    </div>
+    <div class="riso-card" style="height: 350px; display: flex; flex-direction: column;">
+        <h3 class="riso-label" style="font-size: 11px; margin-bottom: 20px;">Stock by Category</h3>
+        <div style="flex: 1; min-height: 0;">
+            <canvas id="categoryChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="grid-2">
+    <div class="riso-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 class="riso-label" style="font-size: 11px; margin-bottom: 0;">Recent Transactions</h3>
+            <a href="{{ url_for('stock.history') }}" class="riso-btn btn-ghost" style="font-size: 9px; padding: 4px 8px;">VIEW ALL</a>
+        </div>
+        <table class="riso-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Product</th>
+                    <th>Type</th>
+                    <th>Qty</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in recent_transactions %}
+                <tr>
+                    <td style="font-size: 10px;">{{ t.created_at.strftime('%d %b, %H:%M') }}</td>
+                    <td style="font-weight: bold;">{{ t.product.name }}</td>
+                    <td>
+                        <span class="badge badge-{{ t.transaction_type|lower }}">{{ t.transaction_type }}</span>
+                    </td>
+                    <td>{{ t.quantity }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="riso-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 class="riso-label" style="font-size: 11px; margin-bottom: 0;">System Alerts</h3>
+            <a href="{{ url_for('reports.alerts_page') }}" class="riso-btn btn-ghost" style="font-size: 9px; padding: 4px 8px;">DISMISS ALL</a>
+        </div>
+        <div class="alerts-list">
+            {% for alert in recent_alerts %}
+            <div style="padding: 10px; border-bottom: 1px dashed rgba(26,35,126,0.1); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-size: 11px; font-weight: bold;">{{ alert.message }}</div>
+                    <div style="font-size: 9px; color: rgba(26,35,126,0.5);">{{ alert.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                </div>
+                <form action="{{ url_for('reports.dismiss_alert', alert_id=alert.id) }}" method="POST">
+                    <button type="submit" class="riso-btn btn-ghost" style="padding: 2px 6px; font-size: 8px;">DISMISS</button>
+                </form>
+            </div>
+            {% endfor %}
+            {% if not recent_alerts %}
+            <p style="text-align: center; padding: 40px; font-size: 11px; opacity: 0.5;">No unread alerts. System clear.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Top Consumed Chart
+        initBarChart('topConsumedChart', 
+            {{ top_consumed|map(attribute=0)|list|tojson }}, 
+            {{ top_consumed|map(attribute=1)|list|tojson }}
+        );
+
+        // Stock Movement Chart
+        initLineChart('stockMovementChart',
+            {{ chart_labels|tojson }},
+            {{ chart_in|tojson }},
+            {{ chart_out|tojson }}
+        );
+
+        // Category Chart (Using sample labels if none exist)
+        {% set cat_labels = ['Electronics', 'Office', 'Furniture', 'Supplies'] %}
+        {% set cat_values = [45, 25, 15, 15] %}
+        initDoughnutChart('categoryChart', 
+            {{ cat_labels|tojson }}, 
+            {{ cat_values|tojson }}
+        );
+    });
+</script>
+{% endblock %}
