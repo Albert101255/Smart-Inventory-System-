@@ -1,77 +1,76 @@
-# 📦 STOCKR — Smart Inventory & Stock Prediction System
+# STOCKR — Smart Inventory & Stock Prediction System
+
+A Flask inventory application with role-based stock management, reporting and a simple historical-consumption stockout estimator.
 
 ![STOCKR Dashboard](https://github.com/Albert101255/Smart-Inventory-System-/raw/main/screenshots/dashboard.png)
 
-## 🎨 Design Philosophy: The Risograph Aesthetic
-STOCKR is not just an inventory tool; it's a visual experience. Inspired by **Risograph printing**, the UI features:
-- **Cream Grain Texture**: A tactile, paper-like background.
-- **Misregistration Effects**: Subtle offsets in typography for a retro-analog feel.
-- **Vibrant Spot Colors**: A palette of Riso Navy, Coral, Teal, and Yellow.
-- **Custom Cursor**: A ring-and-dot interactive cursor for precise control.
+## What it does
 
-## 🚀 Key Features
+- Manage products and stock transactions
+- Record IN / OUT / ADJUST operations
+- Separate admin, manager and staff workflows
+- Visualize inventory activity
+- Estimate how many days of stock remain
+- Create low-stock alerts
+- Send admin email notifications when configured
 
-### 1. Smart Stock Prediction Engine
-Using a rolling average of historical consumption, STOCKR predicts exactly when your products will run out. No more guessing.
+## Stock prediction logic
 
-### 2. Role-Based Access Control (RBAC)
-- **Admin**: Full system control, user management, and global statistics.
-- **Manager**: Catalog management, stock history, and reporting.
-- **Staff**: Quick floor-ops for recording transactions (IN/OUT/ADJUST).
+The prediction engine is deliberately simple and explainable.
 
-### 3. Real-Time Alerting
-Automated visual and email alerts trigger when stock reaches critical thresholds or depletion dates are near.
+For each product it:
 
-### 4. Interactive Data Visualization
-Beautiful Chart.js implementations tracking consumption trends, category breakdowns, and stock movement.
+1. Reads **OUT transactions from the last 30 days**.
+2. Calculates total units consumed.
+3. Divides by 30 to estimate average daily consumption.
+4. Calculates:
 
-## 🛠️ Tech Stack
-- **Backend**: Python / Flask
-- **Database**: SQLAlchemy (SQLite for development)
-- **Frontend**: Vanilla CSS (Custom Design System), JavaScript (Chart.js)
-- **Logic**: Custom Prediction Engine for trend analysis.
+```text
+days_remaining = current_quantity / average_daily_consumption
+```
 
-## 🚀 Quick Start
+5. Estimates a stockout date from that value.
+6. Creates a low-stock alert when the estimate falls below 7 days.
 
-### 1. Clone the repository:
+This is a rolling historical-consumption estimate, **not a machine-learning forecasting model**. It does not currently model seasonality, promotions, demand shocks or irregular consumption patterns.
+
+## Technology
+
+- Python
+- Flask
+- SQLAlchemy
+- SQLite for local development
+- Chart.js
+- HTML/CSS/JavaScript
+- Flask-Mail for configured email alerts
+
+## Run locally
+
 ```bash
-git clone https://github.com/Albert101255/Smart-Inventory-System-
+git clone https://github.com/Albert101255/Smart-Inventory-System-.git
 cd Smart-Inventory-System-
-```
 
-### 2. Set up virtual environment:
-```bash
 python -m venv venv
-source venv/bin/activate  # On Windows: .\venv\Scripts\activate
+source venv/bin/activate
 pip install -r requirements.txt
-```
 
-### 3. Seed the Database:
-```bash
 python seed_data.py
-```
-
-### 4. Run the Application:
-```bash
 python run.py
 ```
 
-## 🔐 Login Credentials (Seeded)
-- **Admin**: `admin@inventory.com` / `Admin@123`
-- **Manager**: `manager@inventory.com` / `Manager@123`
-- **Staff**: `staff@inventory.com` / `Staff@123`
+## Development accounts
 
-## 🌐 Deployment: How to Go Live
-To make STOCKR accessible from anywhere, we recommend using **Render**:
+The seed script creates local demonstration users. Treat all seeded credentials as local-development credentials only; never reuse them for a public deployment.
 
-1. **Connect GitHub**: Create a [Render](https://render.com) account and connect your GitHub repository.
-2. **New Web Service**: Select "New" > "Web Service".
-3. **Configure**:
-   - **Environment**: `Python`
-   - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `gunicorn run:app`
-4. **Environment Variables**: Add `DATABASE_URL` (if using PostgreSQL) or keep current SQLite for simple demos.
-5. **Auto-Deploy**: Every time you push to the `main` branch, Render will automatically rebuild and update your live site.
+## Design
 
----
-© 2026 ANTIGRAVITY LABS. Developed with precision and art.
+The UI uses a risograph-inspired visual style with grain textures, strong spot colors and custom interaction details. The visual layer is intentionally different from a standard admin-dashboard template.
+
+## Limitations / next work
+
+- Add automated tests
+- Validate prediction quality against held-out historical data
+- Add screenshots for major workflows
+- Add PostgreSQL deployment configuration
+- Add configurable prediction windows
+- Compare simple moving-average estimates against stronger forecasting methods
