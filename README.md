@@ -2,7 +2,7 @@
 
 A Flask inventory application with role-based stock management, reporting and a simple historical-consumption stockout estimator.
 
-![STOCKR Dashboard](https://github.com/Albert101255/Smart-Inventory-System-/raw/main/screenshots/dashboard.png)
+> Screenshots are not yet committed to this repository. Adding real workflow screenshots is on the project roadmap.
 
 ## What it does
 
@@ -64,7 +64,7 @@ The seed script creates local demonstration users. Treat all seeded credentials 
 
 ## Design
 
-The UI uses a risograph-inspired visual style with grain textures, strong spot colors and custom interaction details. The visual layer is intentionally different from a standard admin-dashboard template.
+The UI uses a risograph-inspired visual style with grain textures, strong spot colors and custom interaction details.
 
 ## Limitations / next work
 
