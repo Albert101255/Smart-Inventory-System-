@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartStock // Riso Edition</title>
+    <!-- Courier New for Riso feel -->
+    <style>
+        :root {
+            --bg-cream: #FFF9E5;
+            --riso-navy: #1A237E;
+            --riso-coral: #FF6B6B;
+            --riso-teal: #4ECDC4;
+            --riso-yellow: #FFE66D;
+            --riso-purple: #6A0572;
+            --grain-opacity: 0.15;
+            --misreg-x: 2px;
+            --misreg-y: 1px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            cursor: none !important; /* Custom cursor */
+        }
+
+        body {
+            background-color: var(--bg-cream);
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            color: var(--riso-navy);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* --- Grain Texture Overlay --- */
+        .grain-overlay {
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background-image: url("https://www.transparenttextures.com/patterns/60-lines.png"); /* Simple pattern fallback */
+            background-repeat: repeat;
+            opacity: var(--grain-opacity);
+            z-index: 1000;
+            pointer-events: none;
+            animation: grain 80ms steps(10) infinite;
+        }
+
+        @keyframes grain {
+            0%, 100% { transform:translate(0, 0); }
+            10% { transform:translate(-5%, -10%); }
+            30% { transform:translate(3%, -15%); }
+            50% { transform:translate(12%, 9%); }
+            70% { transform:translate(9%, 4%); }
+            90% { transform:translate(-10%, 10%); }
+        }
+
+        /* --- Custom Cursor --- */
+        #cursor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 20px;
+            height: 20px;
+            background: var(--riso-coral);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 2000;
+            mix-blend-mode: multiply;
+            transition: transform 0.05s ease-out;
+        }
+
+        #cursor-ghost {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 30px;
+            height: 30px;
+            border: 2px solid var(--riso-teal);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1999;
+            mix-blend-mode: multiply;
+            transition: transform 0.15s ease-out, width 0.2s, height 0.2s;
+        }
+
+        /* --- Misregistration Effects --- */
+        .riso-text {
+            position: relative;
+            text-shadow: 
+                var(--misreg-x) var(--misreg-y) 0 var(--riso-coral),
+                calc(-1 * var(--misreg-x)) calc(-1 * var(--misreg-y)) 0 var(--riso-teal);
+            mix-blend-mode: multiply;
+        }
+
+        /* --- Parallax Background Blobs --- */
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(40px);
+            z-index: -1;
+            opacity: 0.4;
+            mix-blend-mode: multiply;
+        }
+
+        /* --- Layout --- */
+        #dashboard {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            height: 100vh;
+            border: 4px dashed var(--riso-navy);
+            margin: 20px;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        #sidebar {
+            border-right: 4px dashed var(--riso-navy);
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 40px;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+            border: 2px solid var(--riso-navy);
+            display: inline-block;
+            padding: 5px 15px;
+            transform: rotate(-2deg);
+        }
+
+        .nav-item {
+            font-size: 1.2rem;
+            font-weight: 500;
+            padding: 10px;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: var(--riso-navy);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            border-color: var(--riso-navy);
+            background: var(--riso-yellow);
+            transform: translate(3px, -3px);
+            box-shadow: -3px 3px 0 var(--riso-navy);
+        }
+
+        #main-content {
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        /* --- Cards --- */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .riso-card {
+            background: white;
+            border: 3px solid var(--riso-navy);
+            padding: 25px;
+            position: relative;
+            transition: transform 0.2s;
+        }
+
+        .riso-card::after {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: -5px;
+            right: 0;
+            bottom: 0;
+            border: 3px solid var(--riso-coral);
+            z-index: -1;
+            opacity: 0.5;
+        }
+
+        .riso-card:hover {
+            transform: translate(5px, -5px);
+        }
+
+        .stat-value {
+            font-size: 3rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        /* --- Chart Placeholder --- */
+        .chart-riso {
+            border: 3px solid var(--riso-navy);
+            height: 300px;
+            width: 100%;
+            background: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(26, 35, 126, 0.05) 10px, rgba(26, 35, 126, 0.05) 20px);
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            padding: 20px;
+        }
+
+        .bar {
+            background: var(--riso-teal);
+            border: 2px solid var(--riso-navy);
+            width: 40px;
+            transition: height 0.5s ease-in-out;
+        }
+
+        .bar:nth-child(even) { background: var(--riso-coral); }
+        .bar:nth-child(3n) { background: var(--riso-yellow); }
+
+        /* --- Role Tabs --- */
+        .role-selector {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            background: white;
+            border: 3px solid var(--riso-navy);
+            display: flex;
+            z-index: 1001;
+        }
+
+        .role-tab {
+            padding: 10px 20px;
+            font-weight: 700;
+            text-transform: uppercase;
+            border-right: 3px solid var(--riso-navy);
+            transition: all 0.2s;
+        }
+
+        .role-tab:last-child { border-right: none; }
+        .role-tab:hover, .role-tab.active {
+            background: var(--riso-teal);
+            color: white;
+        }
+
+        /* --- Staff Form View --- */
+        #staff-view {
+            display: none;
+            max-width: 500px;
+            margin: auto;
+        }
+
+        .riso-input {
+            width: 100%;
+            padding: 15px;
+            border: 3px solid var(--riso-navy);
+            margin-bottom: 20px;
+            font-family: inherit;
+            font-size: 1.1rem;
+            background: var(--bg-cream);
+        }
+
+        .riso-btn {
+            background: var(--riso-navy);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-weight: 700;
+            text-transform: uppercase;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="grain-overlay"></div>
+    <div id="cursor"></div>
+    <div id="cursor-ghost"></div>
+
+    <!-- Background Blobs -->
+    <div class="blob" style="width: 400px; height: 400px; background: var(--riso-teal); top: 10%; left: 60%;" data-speed="2"></div>
+    <div class="blob" style="width: 300px; height: 300px; background: var(--riso-coral); bottom: 10%; left: 5%;" data-speed="-1"></div>
+    <div class="blob" style="width: 250px; height: 250px; background: var(--riso-yellow); top: 50%; left: 30%;" data-speed="1.5"></div>
+
+    <div id="dashboard">
+        <aside id="sidebar">
+            <div class="logo riso-text">SMART STOCK</div>
+            <nav id="admin-nav">
+                <a href="#" class="nav-item active">DASHBOARD</a>
+                <a href="#" class="nav-item">INVENTORY</a>
+                <a href="#" class="nav-item">USERS</a>
+                <a href="#" class="nav-item">ALERTS</a>
+                <a href="#" class="nav-item">REPORTS</a>
+            </nav>
+            <nav id="manager-nav" style="display:none;">
+                <a href="#" class="nav-item active">OVERVIEW</a>
+                <a href="#" class="nav-item">STOCK LEVELS</a>
+                <a href="#" class="nav-item">PREDICTIONS</a>
+                <a href="#" class="nav-item">HISTORY</a>
+            </nav>
+        </aside>
+
+        <main id="main-content">
+            <header style="margin-bottom: 60px;">
+                <h1 class="riso-text" id="view-title" style="font-size: 4rem; text-transform: uppercase;">Admin Terminal</h1>
+                <p class="text-muted">SYSTEM STATUS: OPTIMAL // DATA SYNCED 2m AGO</p>
+            </header>
+
+            <div id="admin-view">
+                <div class="grid">
+                    <div class="riso-card">
+                        <small>TOTAL PRODUCTS</small>
+                        <div class="stat-value riso-text">84</div>
+                    </div>
+                    <div class="riso-card">
+                        <small>LOW STOCK</small>
+                        <div class="stat-value riso-text" style="color: var(--riso-coral);">12</div>
+                    </div>
+                    <div class="riso-card">
+                        <small>STOCKOUT PREDICTION</small>
+                        <div class="stat-value riso-text" style="color: var(--riso-teal);">7d</div>
+                    </div>
+                </div>
+
+                <div class="riso-card" style="margin-bottom: 40px;">
+                    <h3>CONSUMPTION TRENDS</h3>
+                    <div class="chart-riso">
+                        <div class="bar" style="height: 80%;"></div>
+                        <div class="bar" style="height: 60%;"></div>
+                        <div class="bar" style="height: 90%;"></div>
+                        <div class="bar" style="height: 40%;"></div>
+                        <div class="bar" style="height: 70%;"></div>
+                        <div class="bar" style="height: 55%;"></div>
+                        <div class="bar" style="height: 85%;"></div>
+                        <div class="bar" style="height: 30%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="staff-view">
+                <div class="riso-card">
+                    <h2 class="mb-4 text-center riso-text">LOG TRANSACTION</h2>
+                    <select class="riso-input">
+                        <option>SELECT PRODUCT...</option>
+                        <option>LAPTOP PRO X1</option>
+                        <option>WIRELESS MOUSE</option>
+                        <option>A4 PAPER BOX</option>
+                    </select>
+                    <input type="number" class="riso-input" placeholder="QUANTITY">
+                    <div style="display: flex; gap: 10px;">
+                        <button class="riso-btn" style="background: var(--riso-teal);">STOCK IN</button>
+                        <button class="riso-btn" style="background: var(--riso-coral);">STOCK OUT</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Role Switcher -->
+    <div class="role-selector">
+        <div class="role-tab active" data-role="admin">Admin</div>
+        <div class="role-tab" data-role="manager">Manager</div>
+        <div class="role-tab" data-role="staff">Staff</div>
+    </div>
+
+    <script>
+        // Custom Cursor Movement
+        const cursor = document.getElementById('cursor');
+        const ghost = document.getElementById('cursor-ghost');
+        const blobs = document.querySelectorAll('.blob');
+
+        document.addEventListener('mousemove', (e) => {
+            const { clientX: x, clientY: y } = e;
+            
+            // Cursor
+            cursor.style.transform = `translate(${x - 10}px, ${y - 10}px)`;
+            ghost.style.transform = `translate(${x - 15}px, ${y - 15}px)`;
+
+            // Parallax Blobs
+            blobs.forEach(blob => {
+                const speed = blob.getAttribute('data-speed');
+                const bx = (window.innerWidth - x * speed) / 100;
+                const by = (window.innerHeight - y * speed) / 100;
+                blob.style.transform = `translate(${bx}px, ${by}px)`;
+            });
+        });
+
+        // Hover Effect on Nav
+        document.querySelectorAll('.nav-item, .role-tab, .riso-btn').forEach(item => {
+            item.addEventListener('mouseenter', () => {
+                ghost.style.width = '60px'; // Expanded size
+                ghost.style.height = '60px';
+                // No need for transform here as the mousemove listener handles it
+            });
+            item.addEventListener('mouseleave', () => {
+                ghost.style.width = '30px'; // Original size
+                ghost.style.height = '30px';
+            });
+        });
+
+        // Role Switching Logic
+        const tabs = document.querySelectorAll('.role-tab');
+        const adminView = document.getElementById('admin-view');
+        const staffView = document.getElementById('staff-view');
+        const adminNav = document.getElementById('admin-nav');
+        const managerNav = document.getElementById('manager-nav');
+        const viewTitle = document.getElementById('view-title');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                const role = tab.getAttribute('data-role');
+                
+                if (role === 'admin') {
+                    adminView.style.display = 'block';
+                    staffView.style.display = 'none';
+                    adminNav.style.display = 'flex';
+                    managerNav.style.display = 'none';
+                    viewTitle.innerText = 'Admin Terminal';
+                } else if (role === 'manager') {
+                    adminView.style.display = 'block';
+                    staffView.style.display = 'none';
+                    adminNav.style.display = 'none';
+                    managerNav.style.display = 'flex';
+                    viewTitle.innerText = 'Manager View';
+                } else if (role === 'staff') {
+                    adminView.style.display = 'none';
+                    staffView.style.display = 'block';
+                    adminNav.style.display = 'none';
+                    managerNav.style.display = 'none';
+                    viewTitle.innerText = 'Staff Station';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
