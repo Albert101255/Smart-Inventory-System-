@@ -16,7 +16,7 @@ def transaction():
     form.product_id.choices = [(p.id, f"{p.name} ({p.sku}) — Stock: {p.quantity}") for p in Product.query.order_by(Product.name).all()]
     
     if form.validate_on_submit():
-        product = Product.query.get(form.product_id.data)
+        product = db.session.get(Product, form.product_id.data)
         qty = form.quantity.data
         t_type = form.transaction_type.data
         

@@ -1,7 +1,8 @@
 venv/
+.venv/
 __pycache__/
 *.pyc
-app.db
+*.db
 instance/
 .env
 .pytest_cache/

@@ -80,8 +80,9 @@ def dashboard():
 @login_required
 @role_required('admin')
 def users():
+    form = UserForm()
     all_users = User.query.order_by(User.created_at.desc()).all()
-    return render_template('admin/users.html', users=all_users)
+    return render_template('admin/users.html', users=all_users, form=form)
 
 @admin.route('/users/add', methods=['GET', 'POST'])
 @login_required
@@ -98,12 +99,13 @@ def add_user():
                 role=form.role.data,
                 is_active=form.is_active.data
             )
-            user.set_password(form.password.data)
+            user.set_password(form.password.data or 'Changeme@123')
             db.session.add(user)
             db.session.commit()
             flash(f'User {user.name} created successfully.', 'success')
             return redirect(url_for('admin.users'))
-    return render_template('admin/users.html', form=form, mode='add')
+    all_users = User.query.order_by(User.created_at.desc()).all()
+    return render_template('admin/users.html', users=all_users, form=form, mode='add')
 
 @admin.route('/users/edit/<int:user_id>', methods=['GET', 'POST'])
 @login_required
@@ -121,7 +123,8 @@ def edit_user(user_id):
         db.session.commit()
         flash('User updated successfully.', 'success')
         return redirect(url_for('admin.users'))
-    return render_template('admin/users.html', form=form, user=user, mode='edit')
+    all_users = User.query.order_by(User.created_at.desc()).all()
+    return render_template('admin/users.html', users=all_users, form=form, user=user, mode='edit')
 
 @admin.route('/users/delete/<int:user_id>', methods=['POST'])
 @login_required

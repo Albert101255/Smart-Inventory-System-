@@ -11,7 +11,7 @@ login_manager.login_message_category = 'info'
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id))
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -38,8 +38,12 @@ def create_app(config_class=Config):
     with app.app_context():
         db.create_all()
 
-    from flask import render_template
-    
+    from flask import render_template, redirect, url_for
+
+    @app.route('/')
+    def index():
+        return redirect(url_for('auth.login'))
+
     @app.errorhandler(403)
     def forbidden(e):
         return render_template('403.html'), 403

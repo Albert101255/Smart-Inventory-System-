@@ -45,9 +45,9 @@ class Product(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    transactions = db.relationship('StockTransaction', backref='product', lazy=True)
-    alerts = db.relationship('Alert', backref='product', lazy=True)
-    predictions = db.relationship('Prediction', backref='product', lazy=True)
+    transactions = db.relationship('StockTransaction', backref='product', lazy=True, cascade='all, delete-orphan')
+    alerts = db.relationship('Alert', backref='product', lazy=True, cascade='all, delete-orphan')
+    predictions = db.relationship('Prediction', backref='product', lazy=True, cascade='all, delete-orphan')
 
 class StockTransaction(db.Model):
     __tablename__ = 'stock_transactions'
@@ -58,6 +58,7 @@ class StockTransaction(db.Model):
     note = db.Column(db.Text)
     performed_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    user = db.relationship('User', backref='transactions', foreign_keys=[performed_by])
 
 class Alert(db.Model):
     __tablename__ = 'alerts'

@@ -8,7 +8,7 @@ def calculate_prediction(product_id):
     Calculate stock prediction for a given product.
     Uses last 30 days of OUT transactions to find average daily consumption.
     """
-    product = Product.query.get(product_id)
+    product = db.session.get(Product, product_id)
     if not product:
         return None
 

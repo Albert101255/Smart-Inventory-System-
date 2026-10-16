@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-stockr}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-stockr_password}
+      POSTGRES_DB: ${POSTGRES_DB:-smart_inventory}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-stockr} -d ${POSTGRES_DB:-smart_inventory}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://stockr:stockr_password@db:5432/smart_inventory}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
