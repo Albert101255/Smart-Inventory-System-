@@ -1,8 +1,12 @@
 # STOCKR — Smart Inventory & Stock Prediction System
 
+> **Live Interactive Demo:** [https://albert101255.github.io/Smart-Inventory-System-/](https://albert101255.github.io/Smart-Inventory-System-/)
+
 A Flask inventory application with role-based stock management, reporting and a simple historical-consumption stockout estimator.
 
-> Screenshots are not yet committed to this repository. Adding real workflow screenshots is on the project roadmap.
+## Try it in your browser
+
+Explore the live interactive Risograph UI sandbox at **[https://albert101255.github.io/Smart-Inventory-System-/](https://albert101255.github.io/Smart-Inventory-System-/)** — switch between Dashboard, Products, Stock IN/OUT Transactions, 30-Day Stockout Predictions, and Low-Stock Alerts, and record simulated transactions to watch the 30-day stockout velocity recalculate in real time.
 
 ## What it does
 
@@ -39,7 +43,7 @@ This is a rolling historical-consumption estimate, **not a machine-learning fore
 - Python
 - Flask
 - SQLAlchemy
-- SQLite for local development
+- SQLite for local development / PostgreSQL via Docker Compose
 - Chart.js
 - HTML/CSS/JavaScript
 - Flask-Mail for configured email alerts
@@ -65,12 +69,3 @@ The seed script creates local demonstration users. Treat all seeded credentials 
 ## Design
 
 The UI uses a risograph-inspired visual style with grain textures, strong spot colors and custom interaction details.
-
-## Limitations / next work
-
-- Add automated tests
-- Validate prediction quality against held-out historical data
-- Add screenshots for major workflows
-- Add PostgreSQL deployment configuration
-- Add configurable prediction windows
-- Compare simple moving-average estimates against stronger forecasting methods
