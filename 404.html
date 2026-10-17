@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STOCKR // Smart Inventory & 30-Day Stockout Prediction System</title>
+    <style>
+        :root {
+            --bg-cream: #FFF9E5;
+            --riso-navy: #1A237E;
+            --riso-coral: #FF6B6B;
+            --riso-teal: #4ECDC4;
+            --riso-yellow: #FFE66D;
+            --riso-purple: #6A0572;
+            --grain-opacity: 0.12;
+            --misreg-x: 2px;
+            --misreg-y: 1px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-cream);
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            color: var(--riso-navy);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .grain-overlay {
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background-image: radial-gradient(rgba(26, 35, 126, 0.08) 1px, transparent 0);
+            background-size: 6px 6px;
+            opacity: var(--grain-opacity);
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .riso-text {
+            position: relative;
+            text-shadow:
+                var(--misreg-x) var(--misreg-y) 0 var(--riso-coral),
+                calc(-1 * var(--misreg-x)) calc(-1 * var(--misreg-y)) 0 var(--riso-teal);
+        }
+
+        .blob {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(55px);
+            z-index: -1;
+            opacity: 0.35;
+            pointer-events: none;
+        }
+
+        #dashboard {
+            display: grid;
+            grid-template-columns: 270px 1fr;
+            min-height: calc(100vh - 32px);
+            border: 4px dashed var(--riso-navy);
+            margin: 16px;
+            background: rgba(255, 255, 255, 0.72);
+        }
+
+        @media (max-width: 900px) {
+            #dashboard {
+                grid-template-columns: 1fr;
+            }
+            #sidebar {
+                border-right: none !important;
+                border-bottom: 4px dashed var(--riso-navy);
+            }
+        }
+
+        #sidebar {
+            border-right: 4px dashed var(--riso-navy);
+            padding: 28px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            background: rgba(255, 249, 229, 0.85);
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: 900;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: -1px;
+            border: 3px solid var(--riso-navy);
+            display: inline-block;
+            padding: 6px 12px;
+            transform: rotate(-1.5deg);
+            background: var(--riso-yellow);
+            box-shadow: 4px 4px 0 var(--riso-navy);
+        }
+
+        .nav-item {
+            font-size: 1rem;
+            font-weight: 700;
+            padding: 12px 14px;
+            border: 2px solid transparent;
+            transition: all 0.15s;
+            text-decoration: none;
+            color: var(--riso-navy);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            background: transparent;
+            text-align: left;
+            font-family: inherit;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            border-color: var(--riso-navy);
+            background: var(--riso-yellow);
+            transform: translate(3px, -3px);
+            box-shadow: -3px 3px 0 var(--riso-navy);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            font-size: 0.75rem;
+            border: 2px solid var(--riso-navy);
+            text-transform: uppercase;
+        }
+        .badge-coral { background: var(--riso-coral); color: white; }
+        .badge-teal { background: var(--riso-teal); color: var(--riso-navy); }
+        .badge-yellow { background: var(--riso-yellow); color: var(--riso-navy); }
+
+        #main-content {
+            padding: 32px;
+            overflow-y: auto;
+        }
+
+        .top-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 28px;
+            padding-bottom: 18px;
+            border-bottom: 3px solid var(--riso-navy);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 22px;
+            margin-bottom: 28px;
+        }
+
+        .riso-card {
+            background: white;
+            border: 3px solid var(--riso-navy);
+            padding: 22px;
+            position: relative;
+            box-shadow: -5px 5px 0 var(--riso-coral);
+        }
+
+        .stat-value {
+            font-size: 2.6rem;
+            font-weight: 900;
+            line-height: 1.1;
+            margin-top: 6px;
+        }
+
+        .riso-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 0.9rem;
+        }
+
+        .riso-table th, .riso-table td {
+            border: 2px solid var(--riso-navy);
+            padding: 10px 12px;
+            text-align: left;
+        }
+
+        .riso-table th {
+            background: var(--riso-navy);
+            color: white;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+        }
+
+        .riso-table tr:nth-child(even) {
+            background: rgba(255, 249, 229, 0.6);
+        }
+
+        .riso-input, .riso-select {
+            width: 100%;
+            padding: 12px;
+            border: 3px solid var(--riso-navy);
+            margin-bottom: 14px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: bold;
+            background: var(--bg-cream);
+            color: var(--riso-navy);
+        }
+
+        .riso-btn {
+            background: var(--riso-navy);
+            color: white;
+            border: 3px solid var(--riso-navy);
+            padding: 12px 20px;
+            font-family: inherit;
+            font-weight: 900;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+            box-shadow: -3px 3px 0 var(--riso-navy);
+        }
+
+        .riso-btn:hover {
+            transform: translate(2px, -2px);
+            box-shadow: -5px 5px 0 var(--riso-navy);
+        }
+
+        .riso-btn.teal { background: var(--riso-teal); color: var(--riso-navy); }
+        .riso-btn.coral { background: var(--riso-coral); color: white; }
+        .riso-btn.yellow { background: var(--riso-yellow); color: var(--riso-navy); }
+
+        .formula-box {
+            background: var(--riso-navy);
+            color: white;
+            padding: 16px 20px;
+            border: 3px solid var(--riso-navy);
+            margin-bottom: 24px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            box-shadow: -5px 5px 0 var(--riso-teal);
+        }
+
+        .formula-box code {
+            background: rgba(255, 230, 109, 0.2);
+            color: var(--riso-yellow);
+            padding: 2px 6px;
+        }
+
+        .chart-bars {
+            display: flex;
+            align-items: flex-end;
+            gap: 16px;
+            height: 210px;
+            padding: 20px 14px 32px;
+            border: 3px solid var(--riso-navy);
+            background: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(26, 35, 126, 0.04) 10px, rgba(26, 35, 126, 0.04) 20px);
+            margin-top: 12px;
+        }
+
+        .bar-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            justify-content: flex-end;
+            position: relative;
+        }
+
+        .bar-fill {
+            width: 100%;
+            max-width: 56px;
+            border: 2px solid var(--riso-navy);
+            transition: height 0.35s ease;
+        }
+
+        .bar-label {
+            position: absolute;
+            bottom: -24px;
+            font-size: 0.72rem;
+            white-space: nowrap;
+        }
+
+        .toast {
+            padding: 12px 16px;
+            border: 3px solid var(--riso-navy);
+            margin-bottom: 18px;
+            display: none;
+            background: var(--riso-yellow);
+            box-shadow: -4px 4px 0 var(--riso-navy);
+        }
+
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+    </style>
+</head>
+<body>
+    <div class="grain-overlay"></div>
+    <div class="blob" style="width: 380px; height: 380px; background: var(--riso-teal); top: 8%; left: 65%;"></div>
+    <div class="blob" style="width: 300px; height: 300px; background: var(--riso-coral); bottom: 8%; left: 5%;"></div>
+    <div class="blob" style="width: 240px; height: 240px; background: var(--riso-yellow); top: 48%; left: 32%;"></div>
+
+    <div id="dashboard">
+        <aside id="sidebar">
+            <div>
+                <div class="logo riso-text">STOCKR</div>
+                <div style="font-size: 0.75rem; opacity: 0.75; margin-bottom: 12px;">RISOPRINT INVENTORY OS v2.1</div>
+            </div>
+
+            <button class="nav-item active" data-tab="dashboard-tab">
+                <span>01 // DASHBOARD</span>
+            </button>
+            <button class="nav-item" data-tab="products-tab">
+                <span>02 // PRODUCTS</span>
+                <span class="badge badge-teal" id="nav-prod-count">6</span>
+            </button>
+            <button class="nav-item" data-tab="transactions-tab">
+                <span>03 // STOCK IN / OUT</span>
+            </button>
+            <button class="nav-item" data-tab="predictions-tab">
+                <span>04 // 30D PREDICTIONS</span>
+            </button>
+            <button class="nav-item" data-tab="alerts-tab">
+                <span>05 // LOW-STOCK ALERTS</span>
+                <span class="badge badge-coral" id="nav-alert-count">0</span>
+            </button>
+
+            <div style="margin-top: auto; padding-top: 20px; border-top: 2px dashed var(--riso-navy); font-size: 0.78rem; line-height: 1.5;">
+                <div>ACTIVE ROLE: <span id="role-badge" class="badge badge-yellow">ADMIN</span></div>
+                <div style="margin-top: 8px; display: flex; gap: 6px;">
+                    <button class="riso-btn yellow" style="padding: 5px 8px; font-size: 0.7rem;" onclick="setRole('ADMIN')">Admin</button>
+                    <button class="riso-btn teal" style="padding: 5px 8px; font-size: 0.7rem;" onclick="setRole('MANAGER')">Manager</button>
+                    <button class="riso-btn coral" style="padding: 5px 8px; font-size: 0.7rem;" onclick="setRole('STAFF')">Staff</button>
+                </div>
+                <div style="margin-top: 14px;">
+                    <a href="https://github.com/Albert101255/Smart-Inventory-System-" target="_blank" style="color: var(--riso-navy);">GitHub Repository →</a>
+                </div>
+            </div>
+        </aside>
+
+        <main id="main-content">
+            <div class="top-header">
+                <div>
+                    <h1 class="riso-text" id="view-title" style="font-size: 2.4rem; text-transform: uppercase;">01 // Operations Dashboard</h1>
+                    <p style="font-size: 0.85rem; opacity: 0.75; margin-top: 4px;">LIVE INTERACTIVE FORECASTING SANDBOX — RECORD TRANSACTIONS TO RECALCULATE 30-DAY VELOCITY</p>
+                </div>
+                <button class="riso-btn teal" onclick="switchTab('transactions-tab')">+ RECORD STOCK IN / OUT</button>
+            </div>
+
+            <div id="toast-box" class="toast"></div>
+
+            <!-- TAB 1: DASHBOARD -->
+            <section id="dashboard-tab" class="tab-panel active">
+                <div class="grid">
+                    <div class="riso-card">
+                        <small>TOTAL PRODUCTS</small>
+                        <div class="stat-value riso-text" id="stat-total-products">0</div>
+                        <small style="opacity: 0.65;">ACTIVE CATALOG</small>
+                    </div>
+                    <div class="riso-card">
+                        <small>TOTAL PHYSICAL UNITS</small>
+                        <div class="stat-value riso-text" id="stat-total-units" style="color: var(--riso-teal);">0</div>
+                        <small style="opacity: 0.65;">IN WAREHOUSE</small>
+                    </div>
+                    <div class="riso-card">
+                        <small>CRITICAL (&lt; 7 DAYS LEFT)</small>
+                        <div class="stat-value riso-text" id="stat-critical-count" style="color: var(--riso-coral);">0</div>
+                        <small style="opacity: 0.65;">30D VELOCITY ALERT</small>
+                    </div>
+                    <div class="riso-card">
+                        <small>30D OUTGOING VOLUME</small>
+                        <div class="stat-value riso-text" id="stat-consumed-30d">0</div>
+                        <small style="opacity: 0.65;">UNITS DISPATCHED</small>
+                    </div>
+                </div>
+
+                <div class="riso-card" style="margin-bottom: 28px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3>ESTIMATED DAYS OF STOCK REMAINING (BY PRODUCT)</h3>
+                        <span class="badge badge-coral">RED = &lt; 7 DAYS ALERT THRESHOLD</span>
+                    </div>
+                    <div class="chart-bars" id="days-chart"></div>
+                </div>
+
+                <div class="riso-card">
+                    <h3>RECENT LEDGER TRANSACTIONS</h3>
+                    <table class="riso-table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>SKU</th>
+                                <th>Product</th>
+                                <th>Type</th>
+                                <th>Qty</th>
+                                <th>Note</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-tx-body"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- TAB 2: PRODUCTS -->
+            <section id="products-tab" class="tab-panel">
+                <div class="riso-card">
+                    <h3>ACTIVE INVENTORY CATALOG</h3>
+                    <table class="riso-table">
+                        <thead>
+                            <tr>
+                                <th>SKU</th>
+                                <th>Product Name</th>
+                                <th>Category</th>
+                                <th>Current Stock</th>
+                                <th>Min Threshold</th>
+                                <th>30d Consumed</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="products-table-body"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- TAB 3: TRANSACTIONS -->
+            <section id="transactions-tab" class="tab-panel">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+                    <div class="riso-card">
+                        <h3 style="margin-bottom: 16px;">RECORD STOCK TRANSACTION</h3>
+                        <label style="font-size: 0.8rem; display: block; margin-bottom: 4px;">SELECT PRODUCT</label>
+                        <select id="tx-product" class="riso-select"></select>
+
+                        <label style="font-size: 0.8rem; display: block; margin-bottom: 4px;">TRANSACTION TYPE</label>
+                        <select id="tx-type" class="riso-select">
+                            <option value="OUT">STOCK OUT (Consumption — increases 30d burn rate)</option>
+                            <option value="IN">STOCK IN (Restock — increases current inventory)</option>
+                        </select>
+
+                        <label style="font-size: 0.8rem; display: block; margin-bottom: 4px;">QUANTITY</label>
+                        <input type="number" id="tx-qty" class="riso-input" value="15" min="1" max="5000">
+
+                        <label style="font-size: 0.8rem; display: block; margin-bottom: 4px;">MEMO / REASON</label>
+                        <input type="text" id="tx-note" class="riso-input" placeholder="e.g. Daily customer order / Warehouse restock">
+
+                        <div style="display: flex; gap: 12px; margin-top: 8px;">
+                            <button class="riso-btn coral" style="flex: 1;" onclick="submitTransaction()">COMMIT TRANSACTION</button>
+                        </div>
+                    </div>
+
+                    <div class="riso-card">
+                        <h3 style="margin-bottom: 12px;">HOW TRANSACTIONS AFFECT FORECASTS</h3>
+                        <p style="font-size: 0.9rem; line-height: 1.6; margin-bottom: 16px;">
+                            Every <strong>STOCK OUT</strong> transaction both reduces physical stock and increases the product's 30-day outgoing consumption total (<code>consumed_30d</code>).
+                        </p>
+                        <div class="formula-box">
+                            <div><strong>Prediction Engine Formula (<code>app/prediction_engine.py</code>):</strong></div>
+                            <div style="margin-top: 8px;">1. <code>avg_daily = total_out_last_30_days / 30</code></div>
+                            <div>2. <code>days_remaining = current_quantity / avg_daily</code></div>
+                            <div>3. <code>if days_remaining &lt; 7: trigger LOW_STOCK Alert</code></div>
+                        </div>
+                        <p style="font-size: 0.85rem; opacity: 0.8;">
+                            Try recording a <strong>STOCK OUT</strong> of 45 units on <em>Laptop Pro x1</em> or <em>Wireless Mouse</em> and watch it immediately drop below 7 days and trigger an alert!
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: PREDICTIONS -->
+            <section id="predictions-tab" class="tab-panel">
+                <div class="formula-box">
+                    <strong>30-DAY ROLLING STOCKOUT FORECAST ENGINE</strong><br>
+                    Uses the last 30 days of <code>OUT</code> transactions to compute average daily burn rate (<code>consumed_30d / 30</code>) and project exact depletion dates.
+                </div>
+                <div class="riso-card">
+                    <h3>RESTOCK PRIORITIZATION LEDGER (SORTED BY URGENCY)</h3>
+                    <table class="riso-table">
+                        <thead>
+                            <tr>
+                                <th>SKU</th>
+                                <th>Product</th>
+                                <th>Current Stock</th>
+                                <th>30d Outgoing</th>
+                                <th>Avg Daily Burn</th>
+                                <th>Est. Days Remaining</th>
+                                <th>Projected Stockout</th>
+                                <th>Forecast Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="predictions-table-body"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- TAB 5: ALERTS -->
+            <section id="alerts-tab" class="tab-panel">
+                <div class="riso-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h3>ACTIVE LOW-STOCK &amp; STOCKOUT ALERTS (&lt; 7 DAYS REMAINING)</h3>
+                        <button class="riso-btn yellow" style="padding: 6px 12px; font-size: 0.78rem;" onclick="resetDemoData()">RESET DEMO DATA</button>
+                    </div>
+                    <table class="riso-table">
+                        <thead>
+                            <tr>
+                                <th>Severity</th>
+                                <th>SKU</th>
+                                <th>Product</th>
+                                <th>Alert Message</th>
+                                <th>Quick Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alerts-table-body"></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const INITIAL_PRODUCTS = [
+            { id: 1, sku: 'COF-001', name: 'Espresso Beans 1kg', category: 'Food & Beverage', qty: 32, unit: 'bags', minThreshold: 15, consumed30d: 210 },
+            { id: 2, sku: 'LAP-001', name: 'Laptop Pro x1', category: 'Electronics', qty: 24, unit: 'pcs', minThreshold: 10, consumed30d: 90 },
+            { id: 3, sku: 'CLE-001', name: 'Disinfectant Spray', category: 'Cleaning Supplies', qty: 18, unit: 'bottles', minThreshold: 20, consumed30d: 120 },
+            { id: 4, sku: 'MOU-001', name: 'Wireless Mouse', category: 'Electronics', qty: 85, unit: 'pcs', minThreshold: 20, consumed30d: 180 },
+            { id: 5, sku: 'PAP-001', name: 'A4 Paper Box', category: 'Stationery', qty: 140, unit: 'boxes', minThreshold: 30, consumed30d: 240 },
+            { id: 6, sku: 'WAT-001', name: 'Mineral Water 500ml', category: 'Food & Beverage', qty: 420, unit: 'bottles', minThreshold: 50, consumed30d: 360 }
+        ];
+
+        const INITIAL_TX = [
+            { time: 'Today, 14:20', sku: 'COF-001', product: 'Espresso Beans 1kg', type: 'OUT', qty: 12, note: 'Cafeteria weekly draw' },
+            { time: 'Today, 11:05', sku: 'CLE-001', product: 'Disinfectant Spray', type: 'OUT', qty: 8, note: 'Floor maintenance' },
+            { time: 'Yesterday, 16:40', sku: 'PAP-001', product: 'A4 Paper Box', type: 'IN', qty: 50, note: 'Monthly PaperCo restock' },
+            { time: 'Yesterday, 09:15', sku: 'LAP-001', product: 'Laptop Pro x1', type: 'OUT', qty: 4, note: 'New engineering hires' }
+        ];
+
+        let products = JSON.parse(JSON.stringify(INITIAL_PRODUCTS));
+        let transactions = JSON.parse(JSON.stringify(INITIAL_TX));
+
+        function computePrediction(p) {
+            const avgDaily = p.consumed30d / 30;
+            if (avgDaily <= 0) {
+                return { avgDaily: 0, daysRemaining: Infinity, stockoutDate: 'N/A', status: 'OK' };
+            }
+            const daysRemaining = p.qty / avgDaily;
+            const date = new Date();
+            date.setDate(date.getDate() + Math.round(daysRemaining));
+            const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            const status = daysRemaining < 7 ? 'CRITICAL (<7d)' : daysRemaining < 14 ? 'WARNING (<14d)' : 'HEALTHY';
+            return {
+                avgDaily: avgDaily.toFixed(2),
+                daysRemaining: daysRemaining.toFixed(1),
+                rawDays: daysRemaining,
+                stockoutDate: dateStr,
+                status
+            };
+        }
+
+        function renderAll() {
+            const enriched = products.map(p => ({ ...p, pred: computePrediction(p) }));
+            const criticalItems = enriched.filter(p => p.pred.rawDays < 7 || p.qty <= p.minThreshold);
+
+            document.getElementById('stat-total-products').textContent = products.length;
+            document.getElementById('stat-total-units').textContent = products.reduce((s, p) => s + p.qty, 0);
+            document.getElementById('stat-critical-count').textContent = criticalItems.length;
+            document.getElementById('stat-consumed-30d').textContent = products.reduce((s, p) => s + p.consumed30d, 0);
+            document.getElementById('nav-prod-count').textContent = products.length;
+            document.getElementById('nav-alert-count').textContent = criticalItems.length;
+
+            const chartEl = document.getElementById('days-chart');
+            chartEl.innerHTML = '';
+            enriched.forEach(p => {
+                const days = Math.min(p.pred.rawDays, 40);
+                const heightPct = Math.max(8, Math.round((days / 40) * 100));
+                const color = p.pred.rawDays < 7 ? 'var(--riso-coral)' : p.pred.rawDays < 14 ? 'var(--riso-yellow)' : 'var(--riso-teal)';
+                const col = document.createElement('div');
+                col.className = 'bar-col';
+                col.innerHTML = `
+                    <div style="font-size: 0.75rem; margin-bottom: 4px;">${p.pred.daysRemaining}d</div>
+                    <div class="bar-fill" style="height: ${heightPct}%; background: ${color};"></div>
+                    <div class="bar-label">${p.sku}</div>
+                `;
+                chartEl.appendChild(col);
+            });
+
+            const txBody = document.getElementById('recent-tx-body');
+            txBody.innerHTML = transactions.slice(0, 8).map(t => `
+                <tr>
+                    <td>${t.time}</td>
+                    <td>${t.sku}</td>
+                    <td>${t.product}</td>
+                    <td><span class="badge ${t.type === 'IN' ? 'badge-teal' : 'badge-coral'}">${t.type}</span></td>
+                    <td>${t.qty}</td>
+                    <td>${t.note}</td>
+                </tr>
+            `).join('');
+
+            const prodBody = document.getElementById('products-table-body');
+            prodBody.innerHTML = enriched.map(p => {
+                const badge = p.qty === 0
+                    ? '<span class="badge badge-coral">OUT OF STOCK</span>'
+                    : p.qty <= p.minThreshold
+                    ? '<span class="badge badge-yellow">BELOW THRESHOLD</span>'
+                    : '<span class="badge badge-teal">IN STOCK</span>';
+                return `
+                    <tr>
+                        <td>${p.sku}</td>
+                        <td>${p.name}</td>
+                        <td>${p.category}</td>
+                        <td>${p.qty} ${p.unit}</td>
+                        <td>${p.minThreshold} ${p.unit}</td>
+                        <td>${p.consumed30d} ${p.unit}</td>
+                        <td>${badge}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            const sel = document.getElementById('tx-product');
+            const prevVal = sel.value;
+            sel.innerHTML = products.map(p => `<option value="${p.id}">${p.sku} — ${p.name} (Stock: ${p.qty} ${p.unit})</option>`).join('');
+            if (prevVal) sel.value = prevVal;
+
+            const sortedPred = [...enriched].sort((a, b) => a.pred.rawDays - b.pred.rawDays);
+            const predBody = document.getElementById('predictions-table-body');
+            predBody.innerHTML = sortedPred.map(p => {
+                const badgeClass = p.pred.rawDays < 7 ? 'badge-coral' : p.pred.rawDays < 14 ? 'badge-yellow' : 'badge-teal';
+                return `
+                    <tr>
+                        <td>${p.sku}</td>
+                        <td>${p.name}</td>
+                        <td>${p.qty} ${p.unit}</td>
+                        <td>${p.consumed30d} ${p.unit}</td>
+                        <td>${p.pred.avgDaily} / day</td>
+                        <td style="font-size: 1.05rem; color: ${p.pred.rawDays < 7 ? 'var(--riso-coral)' : 'inherit'};">${p.pred.daysRemaining} days</td>
+                        <td>${p.pred.stockoutDate}</td>
+                        <td><span class="badge ${badgeClass}">${p.pred.status}</span></td>
+                    </tr>
+                `;
+            }).join('');
+
+            const alertsBody = document.getElementById('alerts-table-body');
+            if (criticalItems.length === 0) {
+                alertsBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 24px;">All products have ≥ 7 days of predicted stock and are above minimum thresholds.</td></tr>`;
+            } else {
+                alertsBody.innerHTML = criticalItems.map(p => `
+                    <tr>
+                        <td><span class="badge badge-coral">LOW_STOCK</span></td>
+                        <td>${p.sku}</td>
+                        <td>${p.name}</td>
+                        <td>${p.name} will run out in <strong>${p.pred.daysRemaining} days</strong> (approx. ${p.pred.stockoutDate}). Current stock: ${p.qty} ${p.unit} (Burn: ${p.pred.avgDaily}/day).</td>
+                        <td><button class="riso-btn teal" style="padding: 6px 10px; font-size: 0.75rem;" onclick="quickRestock(${p.id})">+ RESTOCK 50</button></td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        function showToast(msg) {
+            const box = document.getElementById('toast-box');
+            box.textContent = msg;
+            box.style.display = 'block';
+            setTimeout(() => { box.style.display = 'none'; }, 4000);
+        }
+
+        function submitTransaction() {
+            const prodId = parseInt(document.getElementById('tx-product').value, 10);
+            const type = document.getElementById('tx-type').value;
+            const qty = parseInt(document.getElementById('tx-qty').value, 10);
+            const note = document.getElementById('tx-note').value.trim() || (type === 'IN' ? 'Manual restock' : 'Stock dispatch');
+
+            const prod = products.find(p => p.id === prodId);
+            if (!prod || isNaN(qty) || qty <= 0) return;
+
+            if (type === 'OUT' && prod.qty < qty) {
+                showToast(`ERROR: Insufficient stock for ${prod.name}. Only ${prod.qty} ${prod.unit} available.`);
+                return;
+            }
+
+            if (type === 'IN') {
+                prod.qty += qty;
+            } else {
+                prod.qty -= qty;
+                prod.consumed30d += qty;
+            }
+
+            transactions.unshift({
+                time: 'Just now',
+                sku: prod.sku,
+                product: prod.name,
+                type,
+                qty,
+                note
+            });
+
+            const pred = computePrediction(prod);
+            renderAll();
+            showToast(`Recorded STOCK ${type} (${qty} ${prod.unit}) for ${prod.name}. Est. days remaining: ${pred.daysRemaining}d`);
+        }
+
+        function quickRestock(prodId) {
+            const prod = products.find(p => p.id === prodId);
+            if (!prod) return;
+            prod.qty += 50;
+            transactions.unshift({
+                time: 'Just now',
+                sku: prod.sku,
+                product: prod.name,
+                type: 'IN',
+                qty: 50,
+                note: 'Alert quick-restock (+50)'
+            });
+            renderAll();
+            showToast(`Restocked +50 ${prod.unit} of ${prod.name}. Forecast updated!`);
+        }
+
+        function resetDemoData() {
+            products = JSON.parse(JSON.stringify(INITIAL_PRODUCTS));
+            transactions = JSON.parse(JSON.stringify(INITIAL_TX));
+            renderAll();
+            showToast('Demo inventory and 30-day transaction history reset to baseline.');
+        }
+
+        const TITLES = {
+            'dashboard-tab': '01 // Operations Dashboard',
+            'products-tab': '02 // Inventory Catalog',
+            'transactions-tab': '03 // Stock Room Controls (IN / OUT)',
+            'predictions-tab': '04 // 30-Day Stockout Predictions',
+            'alerts-tab': '05 // Low-Stock Alerts (< 7 Days)'
+        };
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            const btn = document.querySelector(`.nav-item[data-tab="${tabId}"]`);
+            if (btn) btn.classList.add('active');
+            document.getElementById('view-title').textContent = TITLES[tabId] || 'STOCKR';
+        }
+
+        document.querySelectorAll('.nav-item').forEach(btn => {
+            btn.addEventListener('click', () => switchTab(btn.getAttribute('data-tab')));
+        });
+
+        function setRole(role) {
+            document.getElementById('role-badge').textContent = role;
+            showToast(`Switched preview role context to ${role}`);
+        }
+
+        renderAll();
+    </script>
+</body>
+</html>
